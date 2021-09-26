@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DgusDude": {
+      "commandName": "Executable",
+      "executablePath": "%SystemRoot%\\system32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "commandLineArgs": "-ExecutionPolicy Unrestricted -File \"Start Update PC status.ps1\" ",
+      "workingDirectory": "$(ProjectDir)/Examples/DWIN Project example - show pc status"
+    }
+  }
+}

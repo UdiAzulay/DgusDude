@@ -1,0 +1,9 @@
+[INIT]
+PICFIX=1
+VARCount=64
+Version=-1
+SCREENDSIZE=480X272
+SPADDRESS=5000
+[IMG]
+1=1 pcStat.bmp
+2=2 pcStat.jpg

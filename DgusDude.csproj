@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net4.8;net5.0;</TargetFrameworks>
+    <ApplicationIcon />
+    <StartupObject />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Console\**" />
+    <Compile Remove="Examples\**" />
+    <Compile Remove="Test Resources\**" />
+    <EmbeddedResource Remove="Console\**" />
+    <EmbeddedResource Remove="Examples\**" />
+    <EmbeddedResource Remove="Test Resources\**" />
+    <None Remove="Console\**" />
+    <None Remove="Examples\**" />
+    <None Remove="Test Resources\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+    <PackageReference Include="System.IO.Ports" Version="5.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="K600\" />
+  </ItemGroup>
+
+</Project>
