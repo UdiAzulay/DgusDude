@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace DgusDude.T5
 {
+    using Core;
     public class PWM
     {
         public readonly Device Device;
@@ -12,7 +13,7 @@ namespace DgusDude.T5
         public ushort this[int index] { get { return Read(index, 1)[0]; } set { } }
         public void SetPWM(byte index, byte div, UInt16 acuracy)
         {
-            if (index > Length) throw new Exception("PWM indexes are 0-2");
+            if (index > Length) throw new System.Exception("PWM indexes are 0-2");
             var accuracyBytes = ((int)acuracy).ToLittleEndien(2);
             Device.VP.Write(0x86 + (index * 4), new byte[] {
                     0x5A, // fixed
@@ -23,7 +24,7 @@ namespace DgusDude.T5
         }
         public ushort[] Read(int startIndex, int length)
         {
-            if ((startIndex + length) > Length) throw new DWINException("PWM indexes are 0-" + Length);
+            if ((startIndex + length) > Length) throw new Exception("PWM indexes are 0-" + Length);
             var ret = Device.VP.Read(0x92 + startIndex, 2 * length);
             return Enumerable.Range(0, length)
                 .Select(v => (ushort)ret.FromLittleEndien(v * 2, 2)).ToArray();

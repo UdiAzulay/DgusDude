@@ -34,11 +34,11 @@ namespace DgusDude
                 { "19108", new Tuple<uint, uint>(1920, 1080) },
             };
 
-        public Core.LCD CreateLCD()
+        public Core.Screen CreateLCD()
         {
             Tuple<uint, uint> lcdSize;
             if (!LCDSizeMap.TryGetValue(LCDSize, out lcdSize))
-                throw new Exception("Unrecognized screen size code");
+                throw new System.Exception("Unrecognized screen size code");
             var inchSize = decimal.Parse(LCDInch) / 10;
             var pixelformat = System.Drawing.Imaging.PixelFormat.Undefined;
             switch (PixelRes)
@@ -46,7 +46,7 @@ namespace DgusDude
                 case 'T': pixelformat = System.Drawing.Imaging.PixelFormat.Format16bppRgb565; break;
                 case 'G': pixelformat = System.Drawing.Imaging.PixelFormat.Format24bppRgb; break;
             }
-            return new Core.LCD(lcdSize.Item1, lcdSize.Item2, pixelformat, inchSize);
+            return new Core.Screen(lcdSize.Item1, lcdSize.Item2, pixelformat, inchSize);
         }
 
         public bool HasTouch => Touch != 'N' && Touch != (char)0;
@@ -55,7 +55,7 @@ namespace DgusDude
         public ModelNumber Parse(string value) 
         {
             var ret = new ModelNumber(value); 
-            if (!ret.IsValid) throw new DWINException("device model format is DMxnnnnnxnnn_xnWx");
+            if (!ret.IsValid) throw new Exception("device model format is DMxnnnnnxnnn_xnWx");
             return ret;
         }
 

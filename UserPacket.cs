@@ -2,6 +2,7 @@
 
 namespace DgusDude
 {
+    using Core;
     public class UserPacket : Core.PackedData
     {
         public UserPacket(Core.IDeviceAccessor mem, int address, int size) 

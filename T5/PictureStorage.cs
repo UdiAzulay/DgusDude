@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 
 namespace DgusDude.T5
 {
+    using Core;
     public class PictureStorage : Core.PictureStorage //, Core.IDrawPicture
     {
         public PictureStorage(Device device, uint length) 
@@ -33,7 +34,7 @@ namespace DgusDude.T5
 
         private void Upload_Jpg(byte[] data, bool modeSave, ushort modeParam, bool verify = false)
         {
-            if (data.Length > Device.Buffer.Length) throw new Exception("buffer size is too small, use BufferLength to enlarge it");
+            if (data.Length > Device.Buffer.Length) throw new System.Exception("buffer size is too small, use BufferLength to enlarge it");
             var sramAddress = (Device.Buffer.Address >> 1).ToLittleEndien(2);
             Device.Buffer.Write(new ArraySegment<byte>(data), verify);
             var picIdOrPos = ((int)modeParam).ToLittleEndien(2);
@@ -52,7 +53,7 @@ namespace DgusDude.T5
             get { return (int)Device.VP.Read(0x14, 2).FromLittleEndien(0, 2); }
             set
             {
-                if (value > Length) throw DWINException.CreateOutOfRange(value, Length);
+                if (value > Length) throw Exception.CreateOutOfRange(value, Length);
                 var picIdBytes = value.ToLittleEndien(2);
                 Device.VP.Write(0x84, new byte[] { 0x5A, 0x01, picIdBytes[0], picIdBytes[1] });
                 Device.VP.Wait(0x84);
@@ -61,7 +62,7 @@ namespace DgusDude.T5
 
         public override void TakeScreenshot(int pictureId)
         {
-            if (pictureId > Length) throw DWINException.CreateOutOfRange(pictureId, Length);
+            if (pictureId > Length) throw Exception.CreateOutOfRange(pictureId, Length);
             var picIdBytes = pictureId.ToLittleEndien(2);
             Device.VP.Write(0x84, new byte[] {
                     0x5A, //fixed
@@ -72,7 +73,7 @@ namespace DgusDude.T5
 
         public override void UploadPicture(int pictureId, System.IO.Stream stream, ImageFormat format, bool verify)
         {
-            if (pictureId > Length) throw DWINException.CreateOutOfRange(pictureId, Length);
+            if (pictureId > Length) throw Exception.CreateOutOfRange(pictureId, Length);
             if (format == ImageFormat.Bmp)
             {
                 using (var image = Image.FromStream(stream))

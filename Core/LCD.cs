@@ -2,7 +2,7 @@
 
 namespace DgusDude.Core
 {
-    public class LCD
+    public class Screen
     {
         public readonly uint Width;
         public readonly uint Height;
@@ -13,7 +13,7 @@ namespace DgusDude.Core
             return string.Format("{0} Inch, {1}x{2} {3}bpp", DiagonalInch, Width, Height, System.Drawing.Image.GetPixelFormatSize(PixelFormat));
         }
 
-        public LCD(uint width, uint height, System.Drawing.Imaging.PixelFormat pixelFormat, decimal diagonalInch)
+        public Screen(uint width, uint height, System.Drawing.Imaging.PixelFormat pixelFormat, decimal diagonalInch)
         {
             Width = width;
             Height = height;

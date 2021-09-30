@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace DgusDude.T5
 {
+    using Core;
     public class ADC
     {
         public readonly Device Device;

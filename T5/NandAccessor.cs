@@ -2,6 +2,7 @@
 
 namespace DgusDude.T5
 {
+    using Core;
     public class NandAccessor : Core.MemoryBufferedAccessor
     {
         public NandAccessor(T5Device device, uint length, uint blockLength, uint pageSize = 0) 
@@ -14,7 +15,7 @@ namespace DgusDude.T5
             byte bankStart = (byte)(address >> 18);
             byte bankEnd = (byte)(address + length - 1 >> 18);
             if (bankStart < 0x40 || bankStart > 0x7F || bankEnd < 0x40 || bankEnd > 0x7F)
-                throw new Exception("Nand read area is only between 0x01000000:01FFFFFF (16MB of the 64MB)");
+                throw new System.Exception("Nand read area is only between 0x01000000:01FFFFFF (16MB of the 64MB)");
         }
         private void NandWait() { Device.VP.Wait(0xAA); }
 

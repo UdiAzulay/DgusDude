@@ -10,7 +10,7 @@ namespace DgusDude.Core
         public MemoryDirectAccessor(Device device,
             uint length, byte alignment,
             AddressMode addressMode, byte readCommand, byte writeCommand,
-            uint pageSize = 0, uint blockSize = Device.DWIN_REG_MAX_RW_BLEN
+            uint pageSize = 0, uint blockSize = Device.MAX_PACKET_SIZE
             )  : base(device, length, alignment, blockSize, pageSize) 
         {
             AddressMode = addressMode;
@@ -34,7 +34,7 @@ namespace DgusDude.Core
         protected virtual void ReadValidateBlock(int address, PacketHeader sentHeader, PacketHeader replyHeader, ArraySegment<byte> data)
         {
             if (replyHeader.Validate(Device.Config.Header, ReadCommand)) return;
-            throw DWINVerifyException.CreateValidate(this, address, "Read");
+            throw VerifyException.CreateValidate(this, address, "Read");
         }
 
         protected override void ReadBlock(int address, ArraySegment<byte> data)
@@ -50,7 +50,7 @@ namespace DgusDude.Core
                     ReadValidateBlock(address, writeHeader, readHeader, data);
                     break;
                 } catch (TimeoutException) {
-                    if (r == retries) throw DWINException.CreateTimeout(writeHeader.Command, address);
+                    if (r == retries) throw Exception.CreateTimeout(writeHeader.Command, address);
                     System.Threading.Thread.Sleep(Device.Config.RetryWait);
                 }
         }
@@ -71,7 +71,7 @@ namespace DgusDude.Core
         protected virtual void WriteValidateBlock(int address, PacketHeader sentHeader, PacketHeader replyHeader, ArraySegment<byte> data) 
         {
             if (replyHeader.Validate(Device.Config.Header, WriteCommand, Device.Config.AckValue)) return;
-            throw DWINVerifyException.CreateValidate(this, address, "Write");
+            throw VerifyException.CreateValidate(this, address, "Write");
         }
 
         protected override void WriteBlock(int address, ArraySegment<byte> data, bool verify = false)
@@ -89,10 +89,10 @@ namespace DgusDude.Core
                     }
                     if (verify) Verify(address, data);
                     break;
-                } catch (DWINVerifyException) {
+                } catch (VerifyException) {
                     if (r == retries) throw;
                 } catch (TimeoutException) {
-                    if (r == retries) throw DWINException.CreateTimeout(writeHeader.Command, address);
+                    if (r == retries) throw Exception.CreateTimeout(writeHeader.Command, address);
                     System.Threading.Thread.Sleep(Device.Config.RetryWait);
                 }
         }

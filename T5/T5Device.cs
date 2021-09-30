@@ -6,7 +6,7 @@ namespace DgusDude.T5
     public class T5Device : Device
     {
         private static byte[] T5_ACK_VALUE = new byte[] { 0x4F, 0x4B };
-        public T5Device(Platform platform, LCD screen, uint? flashSize) 
+        public T5Device(Platform platform, Screen screen, uint? flashSize) 
             : base(platform, screen)
         {
             Config.AckValue = T5_ACK_VALUE;
@@ -27,7 +27,6 @@ namespace DgusDude.T5
             }
             VP = new VP(RAM);
             Buffer = new MemoryBuffer(RAM, 0x10000, 0x10000);
-            DeviceInfo = new DeviceInfo(this);
             ADC = new ADC(this);
             if (!flashSize.HasValue) flashSize = 0x04000000; //64MB
             if (platMask == Platform.UID2)
@@ -40,40 +39,13 @@ namespace DgusDude.T5
             Music = new MusicStorage(this, (flashSize.Value >> 1) / 0x020000/*128Kb*/, flashSize.Value >> 1 /*last half*/);
         }
 
-        public override Tuple<byte, byte> Version
-        {
-            get { var ret = VP.Read(0x0F, 2); return new Tuple<byte, byte>(ret[0], ret[1]); }
-        }
-        public override void Reset(bool cpuOnly = false) => VP.Write(0x04, new byte[] { 0x55, 0xAA, 0x5A, (byte)(cpuOnly ? 0xA5 : 0x5A) });
-        public override DateTime Time
-        {
-            get
-            {
-                var ret = VP.Read(0x10, 8);
-                if (ret[1] == 0 || ret[2] == 0) return DateTime.MinValue;
-                return new DateTime(2000 + ret[0], ret[1], ret[2], ret[4], ret[5], ret[6]);
-            }
-            set {
-                if ((Platform & Platform.RTC) != 0) {
-                    VP.Write(0x9C, new byte[] {
-                        0x5A, 0xA5,
-                        (byte)(value.Year % 100), (byte)value.Month, (byte)value.Day,
-                        (byte)value.Hour, (byte)value.Minute, (byte)value.Second
-                    });
-                } else {
-                    VP.Write(0x10, new byte[] {
-                        (byte)(value.Year % 100), (byte)value.Month, (byte)value.Day, (byte)value.DayOfWeek,
-                        (byte)value.Hour, (byte)value.Minute, (byte)value.Second, 0x00
-                    });
-                }
-            }
-        }
-
-        public SystemConfig GetDeviceConfig(bool refresh = true) => new SystemConfig(this, refresh);
-        public LCDBrightness GetBrightness(bool refresh = true) => new LCDBrightness(this, refresh);
-        public DeviceInfo DeviceInfo { get; private set; }
         public ADC ADC { get; private set; }
         public PWM PWM { get; private set; }
+
+        public override void Reset(bool cpuOnly = false) => VP.Write(0x04, new byte[] { 0x55, 0xAA, 0x5A, (byte)(cpuOnly ? 0xA5 : 0x5A) });
+        public DeviceInfo GetDeviceInfo() => new DeviceInfo(this);
+        public SystemConfig GetDeviceConfig(bool refresh = true) => new SystemConfig(this, refresh);
+        public LCDBrightness GetBrightness(bool refresh = true) => new LCDBrightness(this, refresh);
 
         protected class T5TouchStatus : TouchStatus
         {
@@ -97,8 +69,8 @@ namespace DgusDude.T5
         {
             var offset = target == 0x10 ? 0x1000 : 0; //DWIN cache org
             var bufSize = (target == 0x10 ? 0x7000 /*28kb*/: 0x10000/*64kb*/) - offset;
-            if (bufSize > Buffer.Length) throw new Exception("buffer size too small");
-            if (data.Length > bufSize) throw new Exception("file too big to upload");
+            if (bufSize > Buffer.Length) throw new System.Exception("buffer size too small");
+            if (data.Length > bufSize) throw new System.Exception("file too big to upload");
             var newBufffer = new byte[bufSize];
             Array.Copy(data, offset, newBufffer, 0, data.Length - offset);
             //for (var i = data.Length - offset; i < newBufffer.Length; i++) newBufffer[i] = byte.MaxValue;
@@ -114,7 +86,7 @@ namespace DgusDude.T5
         }
         protected override void UploadBin(int fileIndex, byte[] data, bool verify = false)
         {
-            if (fileIndex < 0 || fileIndex > 127) throw DWINException.CreateOutOfRange(fileIndex, 127);
+            if (fileIndex < 0 || fileIndex > 127) throw Exception.CreateOutOfRange(fileIndex, 127);
             var address = (int)(fileIndex * (Storage as NandAccessor).BlockSize); //256kb blocks
             Storage.Write(address, new ArraySegment<byte>(), verify);
         }

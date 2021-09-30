@@ -8,13 +8,13 @@ namespace DgusDude.K600
         
         public override void Play(int start, uint length, byte volume)
         {
-            if (start + length > Length) throw DWINException.CreateOutOfRange((int)(start + length), Length);
+            if (start + length > Length) throw Exception.CreateOutOfRange((int)(start + length), Length);
             Device.VP.Write(0x50, new byte[] { 0x5A, (byte)start, (byte)length, 0x5A, volume });
         }
 
         public override void Upload(int index, System.IO.Stream stream, bool verify = false)
         {
-            if (index > Length) throw DWINException.CreateOutOfRange(index, Length);
+            if (index > Length) throw Exception.CreateOutOfRange(index, Length);
             throw new NotImplementedException();
         }
     }

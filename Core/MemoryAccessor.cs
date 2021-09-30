@@ -29,18 +29,18 @@ namespace DgusDude.Core
         }
         protected virtual void ValidateAddress(int address, uint length)
         {
-            if (address >= Length) throw DWINException.CreateOutOfRange(this, address);
-            if (address + (uint)length > Length) throw DWINException.CreateOutOfRange(this, (int)(address + length - 1));
+            if (address >= Length) throw Exception.CreateOutOfRange(this, address);
+            if (address + (uint)length > Length) throw Exception.CreateOutOfRange(this, (int)(address + length - 1));
             ValidateAddressAlignment(address);
             ValidateLengthAlignment(length);
         }
         protected virtual void ValidateAddressAlignment(int value)
         {
-            if (value % Alignment != 0) throw DWINException.CreateMemBaundary(this, Alignment);
+            if (value % Alignment != 0) throw Exception.CreateMemBaundary(this, Alignment);
         }
         protected virtual void ValidateLengthAlignment(uint value)
         {
-            if (value % Alignment != 0) throw DWINException.CreateMemBaundary(this, Alignment);
+            if (value % Alignment != 0) throw Exception.CreateMemBaundary(this, Alignment);
         }
 
         public virtual void ValidateReadAddress(int address, uint length) { ValidateAddress(address, length); }
@@ -89,7 +89,7 @@ namespace DgusDude.Core
             Read(address, new ArraySegment<byte>(readBuffer));
             for (int i = 0; i < data.Count; i++)
                 if (readBuffer[i] != data.Array[data.Offset + i])
-                    throw new DWINVerifyException(string.Format("Write verify exception at {0:X}", address + i));
+                    throw new VerifyException(string.Format("Write verify exception at {0:X}", address + i));
         }
 
         protected ArraySegment<byte> CreatePatternBuffer(ArraySegment<byte> data, uint bufMinSize)

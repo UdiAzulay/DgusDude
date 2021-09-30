@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DgusDude
+namespace DgusDude.Core
 {
     public static class Extensions
     {

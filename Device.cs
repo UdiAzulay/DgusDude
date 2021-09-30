@@ -5,6 +5,7 @@ using System.IO.Ports;
 namespace DgusDude
 {
     using Core;
+
     [Flags]
     public enum Platform
     {
@@ -14,9 +15,10 @@ namespace DgusDude
         UID1 = 0x10, UID2 = 0x20, UID3 = 0x30,
         TouchScreen = 0x80
     };
+
     public abstract class Device : IDisposable
     {
-        public const byte DWIN_REG_MAX_RW_BLEN = 0xF8;
+        public const byte MAX_PACKET_SIZE = 0xF8;
         private bool _abort = false;
         public Platform Platform { get; private set; }
         public ConnectionConfig Config { get; private set; }
@@ -33,9 +35,9 @@ namespace DgusDude
 
         public PictureStorage Pictures { get; protected set; }
         public MusicStorage Music { get; protected set; }
-        public LCD Screen { get; protected set; }
+        public Screen Screen { get; protected set; }
 
-        public Device(Platform platform, LCD screen)
+        public Device(Platform platform, Screen screen)
         {
             Platform = platform;
             Screen = screen;
@@ -60,11 +62,11 @@ namespace DgusDude
             SerialPort.Dispose();
         }
 
-        public static Device Create(Platform platform, LCD lcd, uint? flashSize = null)
+        public static Device Create(Platform platform, Screen screen, uint? flashSize = null)
         {
             if ((platform & Platform.ProcessorMask) == Platform.K600)
-                return new K600.K600Device(platform, lcd, flashSize);
-            else return new T5.T5Device(platform, lcd, flashSize);
+                return new K600.K600Device(platform, screen, flashSize);
+            else return new T5.T5Device(platform, screen, flashSize);
         }
 
         public void Open(string portName, int? baudRate = null, bool? twoStopBits = null)
@@ -83,17 +85,31 @@ namespace DgusDude
             int globalOffset = 0;
             var totalBytes = buffers.Sum(v => v.Count);
             //if (totalBytes > DWIN_REG_MAX_RW_BLEN) throw new DWINException("DWIN_Write length cannot exceed " + DWIN_REG_MAX_RW_BLEN);
-            Exception exNotify = null;
+            System.Exception exNotify = null;
             try {
                 _abort = false;
                 foreach (var v in buffers)
                 {
+
+/* Unmerged change from project 'DgusDude (net5.0)'
+Before:
                     if (_abort) throw new DWINException("Operation aborted");
+After:
+                    if (_abort) throw new DgusDude.DWINException("Operation aborted");
+*/
+
+/* Unmerged change from project 'DgusDude (netstandard2.0)'
+Before:
+                    if (_abort) throw new DWINException("Operation aborted");
+After:
+                    if (_abort) throw new DgusDude.DWINException("Operation aborted");
+*/
+                    if (_abort) throw new Exception("Operation aborted");
                     SerialPort.Write(v.Array, v.Offset, v.Count);
                     DataWrite?.Invoke(this, new DataEventArgs(true, v, globalOffset, totalBytes, retry));
                     globalOffset += v.Count;
                 }
-            } catch (Exception ex) {
+            } catch (System.Exception ex) {
                 exNotify = ex;
                 throw;
             } finally {
@@ -104,8 +120,8 @@ namespace DgusDude
         {
             int globalOffset = 0;
             var totalBytes = buffers.Sum(v => v.Count);
-            if (totalBytes > 0xFF) throw new DWINException("DWIN_Read length cannot exceed " + 0xFF);
-            Exception exNotify = null;
+            if (totalBytes > 0xFF) throw new Exception("DWIN_Read length cannot exceed " + 0xFF);
+            System.Exception exNotify = null;
             try {
                 _abort = false;
                 foreach (var v in buffers)
@@ -114,7 +130,21 @@ namespace DgusDude
                     var keepBytes = 0; //min bytes begore first notify
                     while (offset < v.Count)
                     {
+
+/* Unmerged change from project 'DgusDude (net5.0)'
+Before:
                         if (_abort) throw new DWINException("Operation aborted");
+After:
+                        if (_abort) throw new DgusDude.DWINException("Operation aborted");
+*/
+
+/* Unmerged change from project 'DgusDude (netstandard2.0)'
+Before:
+                        if (_abort) throw new DWINException("Operation aborted");
+After:
+                        if (_abort) throw new DgusDude.DWINException("Operation aborted");
+*/
+                        if (_abort) throw new Exception("Operation aborted");
                         var bytesLeft = v.Count - offset;
                         var byteRead = SerialPort.Read(v.Array, v.Offset + offset, bytesLeft);
                         if (offset + byteRead >= 6)
@@ -132,7 +162,7 @@ namespace DgusDude
                         globalOffset += keepBytes;
                     }
                 }
-            } catch (Exception ex) {
+            } catch (System.Exception ex) {
                 exNotify = ex;
                 throw;
             } finally {
@@ -143,14 +173,9 @@ namespace DgusDude
         public bool Connected => SerialPort.IsOpen;
 
         public abstract void Reset(bool cpuOnly);
-        public abstract Tuple<byte, byte> Version { get; }
-
-        public virtual DateTime Time { get; set; }
-
         public abstract void Format(Action<int> progress = null);
 
         protected abstract void UploadBin(int index, byte[] data, bool verify = false);
-
         public virtual bool Upload(string fileName, bool verify = false)
         {
             var fileNameOnly = System.IO.Path.GetFileName(fileName);
@@ -183,7 +208,7 @@ namespace DgusDude
                     UploadBin(fileIndex, System.IO.File.ReadAllBytes(fileName));
                     return true;
                 case "LIB":
-                    if (fileIndex < 0 || fileIndex > 80) throw DWINException.CreateFileIndex(fileName);
+                    if (fileIndex < 0 || fileIndex > 80) throw Exception.CreateFileIndex(fileName);
                     UserSettings.Write((int)(fileIndex * 0x1000u), new ArraySegment<byte>(System.IO.File.ReadAllBytes(fileName)), verify);
                     return true;
             }

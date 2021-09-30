@@ -2,6 +2,7 @@
 
 namespace DgusDude.T5
 {
+    using Core;
     public class NorAccessor : Core.MemoryBufferedAccessor
     {
         public NorAccessor(T5Device device, uint length) : base(device, length, 4, 0x1000 /*4k*/) { }

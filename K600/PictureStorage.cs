@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 
 namespace DgusDude.K600
 {
+    using Core;
     public class PictureStorage : Core.PictureStorage //, Core.IDrawPicture
     {
         public PictureStorage(Device device, uint length)
@@ -27,7 +28,7 @@ namespace DgusDude.K600
             get { return (int)Device.VP.Read(0x03, 2).FromLittleEndien(0, 2); }
             set
             {
-                if (value > Length) throw DWINException.CreateOutOfRange(value, Length);
+                if (value > Length) throw Exception.CreateOutOfRange(value, Length);
                 var picIdBytes = value.ToLittleEndien(2);
                 Device.VP.Write(0x03, picIdBytes);
             }
@@ -35,7 +36,7 @@ namespace DgusDude.K600
 
         public override void UploadPicture(int pictureId, System.IO.Stream stream, ImageFormat format, bool verify)
         {
-            if (pictureId > Length) throw DWINException.CreateOutOfRange(pictureId, Length);
+            if (pictureId > Length) throw Exception.CreateOutOfRange(pictureId, Length);
             if (format == ImageFormat.Bmp) {
                 using (var image = Image.FromStream(stream))
                     Upload_Bitmap(pictureId, new Bitmap(image).GetBytes(PixelFormat.Format16bppRgb565), true, verify);

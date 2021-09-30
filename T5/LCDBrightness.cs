@@ -2,6 +2,7 @@
 
 namespace DgusDude.T5
 {
+    using Core;
     public class LCDBrightness : Core.PackedData
     {
         public LCDBrightness(T5Device device, bool refresh = true, bool autoUpdate = true) : base(device.VP, 0x82, new byte[4], refresh, autoUpdate) { }

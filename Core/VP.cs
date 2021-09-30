@@ -31,7 +31,7 @@ namespace DgusDude.Core
                 loopCount--;
             }
             if (loopCount <= 0)
-                throw new DWINException(string.Format("DeviceWait indication is not clear at VP 0x{0:X4}", address));
+                throw new Exception(string.Format("DeviceWait indication is not clear at VP 0x{0:X4}", address));
         }
     }
 }

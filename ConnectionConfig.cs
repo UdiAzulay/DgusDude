@@ -1,12 +1,12 @@
 ﻿using System;
-
-namespace DgusDude.Core
+namespace DgusDude
 {
     [Flags]
-    public enum ConnectionOptions : byte 
+    public enum ConnectionOptions : byte
     {
-        CRC = 0x01, NoAckRAM = 0x80, NoAckREG = 0x40, 
+        CRC = 0x01, NoAckRAM = 0x80, NoAckREG = 0x40,
     }
+
     public class ConnectionConfig
     {
         public ConnectionOptions Options { get; set; } = ConnectionOptions.NoAckRAM;
@@ -16,7 +16,7 @@ namespace DgusDude.Core
         public int RetryWait { get; set; } = 200;
         public override string ToString()
         {
-            return string.Format("Header: {0}, Retries: {1}, Options: {2}", 
+            return string.Format("Header: {0}, Retries: {1}, Options: {2}",
                 BitConverter.ToString(Header), Retries, Options);
         }
     }
