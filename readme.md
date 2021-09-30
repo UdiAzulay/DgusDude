@@ -1,6 +1,4 @@
-﻿DWIN DGUS .Net library and download tool by Udi Azulay 2021
-
-a .Net libaray to control DGUS devices throu serial port
+﻿a .Net libaray and download tool to control DWIN DGUS devices over serial port
 
 -About:
 I originally developed it after failing to upload a custom firmware to my 3d printer using the SD card,
@@ -10,7 +8,8 @@ so for me, DWIN uploader natural tool fail with timeout error
 
 This project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
 
--Supported files: .BMP, JPG, BIN, LIB, HZK, DZK, ICO, DWINOS*.BIN
+-Supported devices: T5, T5L, K600 (partial support)
+-Supported file types: BMP, JPG, BIN, LIB, HZK, DZK, ICO, DWINOS*.BIN
 
 -Direct Upload from powershell
 <pre>.Examples/DgusDevice.ps1 -Path "DWIN_SET/*.*"</pre>
