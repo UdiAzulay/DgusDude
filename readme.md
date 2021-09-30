@@ -2,8 +2,7 @@
 
 a .Net libaray to control DGUS devices throu serial port
 
--About
-
+-About:
 	I originally developed it after failing to upload a custom firmware to my 3d printer using the SD card,
 	for some reason my SD Card stop loading the update screen and
 	it seems that my version of DWIN OS is NoAck (does not response 0x4F4B for 0x83 commands)
