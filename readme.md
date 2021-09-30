@@ -24,6 +24,7 @@ see Examples directory for help and samples
 
 
 -Output of print device info example: (for T5UID1)
+<pre>
 PS D:\DgusDude\Examples> D:\DgusDude\Examples\Print deviceInfo.ps1
 DgusDude by Udi Azulay 2021
 COM-Port (COM6, COM7, COM10, COM14): com14
@@ -57,3 +58,4 @@ CpuTemprature : 0
 SDUploadDir   :
 DeviceID      : 8671135961630377990
 Device        : DgusDude.T5.T5Device
+</pre>
