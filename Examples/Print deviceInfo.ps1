@@ -3,17 +3,14 @@
 Import-Module $PSScriptRoot\DgusDevice.ps1
 $device = New-DgusDevice
 try {
-    Write-Output "Device", $device
-    Write-Output "DeviceInfo: ", $device.DeviceInfo
-    Write-Output "DeviceConfig: ", $device.DeviceConfig
-    Write-Output "SRAM: ", $device.SRAM
-    Write-Output "Register: ", $device.Register
-    Write-Output "Nand: ", $device.Nand
-    Write-Output "Nor: ", $device.Nor
-    Write-Output "Pictures: ", $device.Pictures
-    Write-Output "Music: ", $device.Music
-    Write-Output "ADC: ", $device.ADC
-    Write-Output "PWM: ", $device.PWM
+    Write-Output $device
+    if (-Not $device.Connected) { return }
+    Write-Output ("Touch        : " + $device.GetTouch().ToString())
+    if ($device -is [DgusDude.T5.T5Device]) {
+        Write-Output ("DeviceConfig : " + $device.GetDeviceConfig().ToString())
+        Write-Output ("Brightness   : " + $device.GetBrightness().ToString())
+        Write-Output "", $device.DeviceInfo
+    }
 }finally{
     $device.Close()
 }

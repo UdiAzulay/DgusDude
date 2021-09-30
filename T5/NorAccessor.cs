@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace DgusDude.Core.T5
+namespace DgusDude.T5
 {
-    public class NorAccessor : MemoryBufferedAccessor
+    public class NorAccessor : Core.MemoryBufferedAccessor
     {
-        public NorAccessor(T5Base device, uint length) : base(device, length, 4, 0x1000 /*4k*/) { }
-
-        private void SendIO(bool write, uint address, uint bufferAddress, int length)
+        public NorAccessor(T5Device device, uint length) : base(device, length, 4, 0x1000 /*4k*/) { }
+        private void SendIO(bool write, int address, int bufferAddress, uint length)
         {
-            var lengthWords = ((uint)length >> 1).EnsureEvenLength().ToLittleEndien(2);
+            var lengthWords = ((int)(length >> 1).EnsureEvenLength()).ToLittleEndien(2);
             var ramAddress = (bufferAddress >> 1).ToLittleEndien(2);
             var norAddress = (address >> 1).ToLittleEndien(3);
             var cmd = write ? (byte)0xA5 : (byte)0x5A;
@@ -21,18 +20,15 @@ namespace DgusDude.Core.T5
             Device.VP.Wait(0x08, cmd);
         }
 
-        public override void Read(uint address, uint targetAddress, int length)
+        //if ((address & 0xFFFFFF) > 0x1FFFF) throw new Exception("Nor block is only 0x1FFFF bytes");
+        protected override void ReadBlock(int address, int bufferAddress, uint length)
         {
-            //if ((address & 0xFFFFFF) > 0x1FFFF) throw new Exception("Nor block is only 0x1FFFF bytes");
-            ValidateReadAddress(address, length);
-            Device.SRAM.ValidateWriteAddress(targetAddress, length);
-            SendIO(false, address, targetAddress, length);
+            SendIO(false, address, bufferAddress, length);
         }
-        public override void Write(uint address, uint srcAddress, int length)
+        protected override void WriteBlock(int address, int bufferAddress, uint length)
         {
-            ValidateWriteAddress(address, length);
-            Device.SRAM.ValidateReadAddress(srcAddress, length);
-            SendIO(true, address, srcAddress, length);
+            SendIO(true, address, bufferAddress, length);
         }
+
     }
 }

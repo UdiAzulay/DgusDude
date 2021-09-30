@@ -1,31 +1,45 @@
 ﻿using System;
 using System.Linq;
 using System.IO.Ports;
-using DgusDude.Core;
 
 namespace DgusDude
 {
+    using Core;
+    [Flags]
+    public enum Platform
+    {
+        ProcessorMask = 0x07, PlatformMask = 0x70,
+        K600 = 0x01, T5 = 0x02, T5L = 0x03,
+        RTC = 0x08,
+        UID1 = 0x10, UID2 = 0x20, UID3 = 0x30,
+        TouchScreen = 0x80
+    };
     public abstract class Device : IDisposable
     {
-        private bool _abort { get; set; } = false;
+        public const byte DWIN_REG_MAX_RW_BLEN = 0xF8;
+        private bool _abort = false;
+        public Platform Platform { get; private set; }
         public ConnectionConfig Config { get; private set; }
         public SerialPort SerialPort { get; private set; }
         public event EventHandler<DataEventArgs> DataRead;
         public event EventHandler<DataEventArgs> DataWrite;
-        public uint BufferAddress { get; set; } = 0x10000; //0x02000 start at 0x08000 (word)
-        public int BufferLength { get; set; } = 0x10000; //64k;
 
+        public MemoryAccessor Registers { get; protected set; }
+        public MemoryAccessor RAM { get; protected set; }
+        public MemoryBufferedAccessor Storage { get; protected set; }
+        public MemoryBufferedAccessor UserSettings { get; protected set; }
+        public MemoryBuffer Buffer { get; protected set; }
         public VP VP { get; protected set; }
-        public MemoryAccessor SRAM { get; protected set; }
-        public MemoryAccessor Register { get; protected set; }
-        public MemoryBufferedAccessor Nand { get; protected set; }
 
-        public System.Drawing.Size LCDSize { get; protected set; }
-        public System.Drawing.Imaging.PixelFormat PixelFormat { get; protected set; }
-        public System.Drawing.Imaging.ImageFormat[] SupportedImageFormats { get; protected set; }
+        public PictureStorage Pictures { get; protected set; }
+        public MusicStorage Music { get; protected set; }
+        public LCD Screen { get; protected set; }
 
-        public Device(ConnectionConfig config)
+        public Device(Platform platform, LCD screen)
         {
+            Platform = platform;
+            Screen = screen;
+            Config = new ConnectionConfig();
             SerialPort = new SerialPort()
             {
                 BaudRate = 115200,
@@ -35,7 +49,6 @@ namespace DgusDude
                 ReadTimeout = 3000,
                 WriteTimeout = 3000
             };
-            Config = config ?? new ConnectionConfig();
         }
 
         ~Device() { Dispose(false); }
@@ -47,12 +60,18 @@ namespace DgusDude
             SerialPort.Dispose();
         }
 
-        public void Open(string portName, int? baudRate = null, bool? twoStopBits = null, bool? crc = null)
+        public static Device Create(Platform platform, LCD lcd, uint? flashSize = null)
+        {
+            if ((platform & Platform.ProcessorMask) == Platform.K600)
+                return new K600.K600Device(platform, lcd, flashSize);
+            else return new T5.T5Device(platform, lcd, flashSize);
+        }
+
+        public void Open(string portName, int? baudRate = null, bool? twoStopBits = null)
         {
             if (!string.IsNullOrEmpty(portName)) SerialPort.PortName = portName;
             if (baudRate.HasValue) SerialPort.BaudRate = baudRate.Value;
             if (twoStopBits.HasValue) SerialPort.StopBits = twoStopBits.Value ? StopBits.Two : StopBits.One;
-            if (crc.HasValue) Config.EnableCRC = crc.Value;
             SerialPort.Open();
         }
         public void Close() => SerialPort.Close();
@@ -65,8 +84,8 @@ namespace DgusDude
             var totalBytes = buffers.Sum(v => v.Count);
             //if (totalBytes > DWIN_REG_MAX_RW_BLEN) throw new DWINException("DWIN_Write length cannot exceed " + DWIN_REG_MAX_RW_BLEN);
             Exception exNotify = null;
-            try
-            {
+            try {
+                _abort = false;
                 foreach (var v in buffers)
                 {
                     if (_abort) throw new DWINException("Operation aborted");
@@ -74,27 +93,21 @@ namespace DgusDude
                     DataWrite?.Invoke(this, new DataEventArgs(true, v, globalOffset, totalBytes, retry));
                     globalOffset += v.Count;
                 }
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 exNotify = ex;
                 throw;
-            }
-            finally
-            {
-                _abort = false;
+            } finally {
                 DataWrite?.Invoke(this, new DataEventArgs(true, Extensions.EmptyArraySegment, globalOffset, totalBytes, retry, exNotify));
             }
         }
-
         public void RawRead(int retry, params ArraySegment<byte>[] buffers)
         {
             int globalOffset = 0;
             var totalBytes = buffers.Sum(v => v.Count);
             if (totalBytes > 0xFF) throw new DWINException("DWIN_Read length cannot exceed " + 0xFF);
             Exception exNotify = null;
-            try
-            {
+            try {
+                _abort = false;
                 foreach (var v in buffers)
                 {
                     var offset = 0;
@@ -119,25 +132,83 @@ namespace DgusDude
                         globalOffset += keepBytes;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 exNotify = ex;
                 throw;
-            }
-            finally
-            {
-                _abort = false;
+            } finally {
                 DataRead?.Invoke(this, new DataEventArgs(false, Extensions.EmptyArraySegment, globalOffset, totalBytes, retry, exNotify));
             }
         }
 
-        public virtual T GetInterface<T>() where T : class
-        {
-            throw DWINException.CreateInterfaceNotExist(typeof(T));
-        }
-
+        public bool Connected => SerialPort.IsOpen;
 
         public abstract void Reset(bool cpuOnly);
+        public abstract Tuple<byte, byte> Version { get; }
+
+        public virtual DateTime Time { get; set; }
+
+        public abstract void Format(Action<int> progress = null);
+
+        protected abstract void UploadBin(int index, byte[] data, bool verify = false);
+
+        public virtual bool Upload(string fileName, bool verify = false)
+        {
+            var fileNameOnly = System.IO.Path.GetFileName(fileName);
+            int fileIndex = int.MaxValue;
+            for (var i = 0; i < fileNameOnly.Length; i++)
+            {
+                if (char.IsDigit(fileNameOnly[i])) continue;
+                if (i > 0) fileIndex = int.Parse(fileNameOnly.Substring(0, i));
+                break;
+            }
+            var ext = System.IO.Path.GetExtension(fileName)?.ToUpper()?.TrimStart('.');
+            switch (ext)
+            {
+                case "JPG":
+                    using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        Pictures.UploadPicture(fileIndex, f, System.Drawing.Imaging.ImageFormat.Jpeg, verify);
+                    return true;
+                case "BMP":
+                    using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        Pictures.UploadPicture(fileIndex, f, System.Drawing.Imaging.ImageFormat.Bmp, verify);
+                    return true;
+                case "WAV":
+                    using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                        Music.Upload(fileIndex, f, verify);
+                    return true;
+                case "HZK":
+                case "DZK":
+                case "BIN":
+                case "ICO":
+                    UploadBin(fileIndex, System.IO.File.ReadAllBytes(fileName));
+                    return true;
+                case "LIB":
+                    if (fileIndex < 0 || fileIndex > 80) throw DWINException.CreateFileIndex(fileName);
+                    UserSettings.Write((int)(fileIndex * 0x1000u), new ArraySegment<byte>(System.IO.File.ReadAllBytes(fileName)), verify);
+                    return true;
+            }
+            return false;
+        }
+
+        public virtual TouchStatus GetTouch() { return null; }
+        public UserPacket ReadKey(int timeout = -1)
+        {
+            if ((Platform & Platform.TouchScreen) != Platform.TouchScreen)
+                throw new NotSupportedException();
+            var readTimeout = SerialPort.ReadTimeout;
+            var header = new PacketHeader((VP.Memory as MemoryDirectAccessor).AddressMode, Config.Header.Length, 0);
+            SerialPort.ReadTimeout = timeout;
+            try {
+                RawRead(0, header.Data);
+                var ret = new UserPacket(RAM, header.Address, header.DataLength);
+                RawRead(0, new ArraySegment<byte>(ret.Data));
+                return ret;
+            } catch (TimeoutException) {
+                return null;
+            } finally {
+                SerialPort.ReadTimeout = readTimeout;
+            }
+        }
+
     }
 }

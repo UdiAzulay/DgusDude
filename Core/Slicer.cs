@@ -11,11 +11,17 @@ namespace DgusDude.Core
         IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
         IEnumerator<ArraySegment<byte>> IEnumerable<ArraySegment<byte>>.GetEnumerator() { return GetEnumerator(); }
         public Enumerator GetEnumerator() { return new Enumerator(this); }
-        public Slicer(ArraySegment<byte> data, uint blockSize, uint startPosition = 0) { _array = data; _blockSize = blockSize; _firstBlockSize = blockSize - (startPosition % blockSize); _length = (uint)data.Count; }
-        public Slicer(uint length, uint blockSize, uint startPosition = 0)
+        public Slicer(ArraySegment<byte> data, uint blockSize, int startPosition = 0) 
+            :this((uint)data.Count, blockSize, startPosition)
+        { _array = data; }
+
+        public Slicer(uint length, uint blockSize, int startPosition = 0)
         {
-            _array = Extensions.EmptyArraySegment; _length = length;
-            _blockSize = blockSize; _firstBlockSize = blockSize - (startPosition % blockSize);
+            //_array = Extensions.EmptyArraySegment; 
+            _length = length;
+            if (blockSize == 0) blockSize = int.MaxValue;
+            _blockSize = blockSize;
+            _firstBlockSize = blockSize - ((uint)startPosition % blockSize);
         }
 
         public class Enumerator : IEnumerator<ArraySegment<byte>>

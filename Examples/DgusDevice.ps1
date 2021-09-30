@@ -21,7 +21,9 @@ function New-DgusDevice
 	param([string] $comPort)
 	[void](LoadDgusAsm)
 	$savePort = $false
-	$device = New-Object -TypeName DgusDude.Devices.T5UID1
+	$platform = [DgusDude.Platform]::T5 -bor [DgusDude.Platform]::UID1 -bor [DgusDude.Platform]::TouchScreen
+	$screen = New-Object -TypeName DgusDude.Core.LCD -ArgumentList 272, 480, 0, 4.3
+	$device = [DgusDude.Device]::Create($platform, $screen)
 	if (-Not $comPort) { $comPort = $global:DgusDevicePort }
 	if (-Not $comPort) {
 		#Write-Output "Config", $device.Config

@@ -2,9 +2,15 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net4.8;net5.0;</TargetFrameworks>
+    <TargetFrameworks>net4.8;netstandard2.0;net5.0;</TargetFrameworks>
     <ApplicationIcon />
     <StartupObject />
+    <PackageProjectUrl>https://github.com/UdiAzulay/DgusDude</PackageProjectUrl>
+    <Authors>Udi Azulay</Authors>
+    <Description>.Net library to control DWIN DGUS devices</Description>
+    <Deterministic>false</Deterministic>
+    <AssemblyVersion>1.0.*</AssemblyVersion>
+    <FileVersion>1.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,10 +28,6 @@
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
     <PackageReference Include="System.IO.Ports" Version="5.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="K600\" />
   </ItemGroup>
 
 </Project>

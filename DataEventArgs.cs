@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DgusDude.Core
+namespace DgusDude
 {
     public class DataEventArgs
     {

@@ -6,7 +6,7 @@ namespace DgusDude.Core
     {
         public readonly IDeviceAccessor Memory;
         public readonly byte[] Data;
-        public uint Address { get; private set; }
+        public readonly int Address;
         public bool IsChanged { get; protected set; }
         public bool AutoUpdate { get; set; }
         protected virtual void Update(int offset, int length) { Memory.Write(Address, new ArraySegment<byte>(Data, offset, length)); }
@@ -20,7 +20,7 @@ namespace DgusDude.Core
             Update(offset, length);
             IsChanged = false;
         }
-        protected PackedData(IDeviceAccessor mem, uint address, byte[] data, bool refresh = true, bool autoUpdate = false)
+        protected PackedData(IDeviceAccessor mem, int address, byte[] data, bool refresh = true, bool autoUpdate = false)
         {
             Memory = mem; Address = address;
             Data = data; AutoUpdate = autoUpdate;

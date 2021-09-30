@@ -24,7 +24,7 @@ try {
         $data.Update()
 
         #read buttons
-        $readData = $device.VP.ReadKey(1000); #wait 1 s
+        $readData = $device.ReadKey(1000); #wait 1 s
         if (-Not $readData) { Continue }
         $btnId = $readData.GetShort(1)
         if ($btnId -Eq 1) { 

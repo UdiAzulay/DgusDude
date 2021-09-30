@@ -1,35 +1,89 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace DgusDude.Core
 {
     public interface IDeviceAccessor
     {
         //readonly Core.Device Device;
-        void Read(uint address, ArraySegment<byte> data);
-        void Write(uint address, ArraySegment<byte> data, bool verify = false);
+        void Read(int address, ArraySegment<byte> data);
+        void Write(int address, ArraySegment<byte> data, bool verify = false);
     }
 
     public abstract class MemoryAccessor : IDeviceAccessor
     {
-        protected static byte[] WritePaddingByte = new byte[] { 0x00 };
         public readonly Device Device;
         public uint Length { get; private set; }
+        public uint BlockSize { get; private set; }
+        public uint PageSize { get; private set; }
         public byte Alignment { get; private set; }
-        public uint MaxPacketLength { get; private set; }
-        protected MemoryAccessor(Device device, uint length, byte alignment, uint maxPacketLength) { Device = device; Length = length; Alignment = alignment; MaxPacketLength = maxPacketLength; }
-        protected virtual void ValidateAddress(uint address, int length)
+        protected MemoryAccessor(Device device, uint length, byte alignment = 1, uint blockSize = 0, uint pageSize = 0) 
+        { 
+            Device = device; 
+            Length = length; 
+            Alignment = alignment;
+            BlockSize = blockSize;
+            PageSize = pageSize;
+        }
+
+        public override string ToString() { 
+            return string.Format("{0}kb\t(Align:{1}, Block:{2}, Page:{3})", Length / 1024, Alignment, BlockSize, PageSize); 
+        }
+        protected virtual void ValidateAddress(int address, uint length)
         {
             if (address >= Length) throw DWINException.CreateOutOfRange(this, address);
-            if (address + (uint)length > Length) throw DWINException.CreateOutOfRange(this, address + (uint)length - 1);
-            if ((address % Alignment != 0) || (length % Alignment != 0)) throw DWINException.CreateMemBaundary(this, Alignment);
+            if (address + (uint)length > Length) throw DWINException.CreateOutOfRange(this, (int)(address + length - 1));
+            ValidateAddressAlignment(address);
+            ValidateLengthAlignment(length);
         }
-        public virtual void ValidateReadAddress(uint address, int length) { ValidateAddress(address, length); }
-        public virtual void ValidateWriteAddress(uint address, int length) { ValidateAddress(address, length); }
-        public abstract void Read(uint address, ArraySegment<byte> data);
-        public abstract void Write(uint address, ArraySegment<byte> data, bool verify = false);
-        public virtual void Verify(uint address, ArraySegment<byte> data)
+        protected virtual void ValidateAddressAlignment(int value)
+        {
+            if (value % Alignment != 0) throw DWINException.CreateMemBaundary(this, Alignment);
+        }
+        protected virtual void ValidateLengthAlignment(uint value)
+        {
+            if (value % Alignment != 0) throw DWINException.CreateMemBaundary(this, Alignment);
+        }
+
+        public virtual void ValidateReadAddress(int address, uint length) { ValidateAddress(address, length); }
+        protected virtual void ReadBlock(int address, ArraySegment<byte> data) { throw new NotImplementedException(); }
+        protected virtual void ReadPage(int address, ArraySegment<byte> data) 
+        {
+            foreach (var block in new Slicer(data, BlockSize))
+            {
+                ReadBlock(address, block);
+                address += block.Count;
+            }
+        }
+        public virtual void Read(int address, ArraySegment<byte> data)
+        {
+            ValidateReadAddress(address, (uint)data.Count);
+            foreach (var page in new Slicer(data, PageSize, address))
+            {
+                ReadPage(address, page);
+                address += page.Count;
+            }
+        }
+
+        public virtual void ValidateWriteAddress(int address, uint length) { ValidateAddress(address, length); }
+        protected virtual void WriteBlock(int address, ArraySegment<byte> data, bool verify = false) { throw new NotImplementedException(); }
+        protected virtual void WritePage(int address, ArraySegment<byte> data, bool verify = false) 
+        {
+            foreach (var block in new Slicer(data, BlockSize))
+            {
+                WriteBlock(address, block, verify);
+                address += block.Count;
+            }
+        }
+        public virtual void Write(int address, ArraySegment<byte> data, bool verify = false)
+        {
+            ValidateWriteAddress(address, (uint)data.Count);
+            foreach (var page in new Slicer(data, PageSize, address))
+            {
+                WritePage(address, page, verify);
+                address += page.Count;
+            }
+        }
+
+        public virtual void Verify(int address, ArraySegment<byte> data)
         {
             byte[] readBuffer = new byte[data.Count + (data.Count % 2 == 1 ? 1 : 0)];
             Read(address, new ArraySegment<byte>(readBuffer));
@@ -48,16 +102,17 @@ namespace DgusDude.Core
             return new ArraySegment<byte>(newData);
         }
 
-        public virtual void MemSet(uint address, int length, ArraySegment<byte> data, bool verify = false)
+        public virtual void MemSet(int address, uint length, ArraySegment<byte> data, bool verify = false)
         {
             var offset = 0;
-            data = CreatePatternBuffer(data, MaxPacketLength);
+            if (data == Extensions.EmptyArraySegment) data = CreatePatternBuffer(data, BlockSize);
+            else data = new ArraySegment<byte>(new byte[BlockSize]);
             while (offset < length)
             {
                 var dt = new ArraySegment<byte>(data.Array,
                     data.Offset + (offset % data.Count),
-                    Math.Min(data.Count, length - offset));
-                Write(address + (uint)offset, dt, verify);
+                    Math.Min(data.Count, (int)(length - offset)));
+                Write(address + offset, dt, verify);
                 offset += dt.Count;
             }
         }
