@@ -71,6 +71,13 @@ namespace DgusDude
             else return new T5.T5Device(platform, screen, flashSize);
         }
 
+        public static Device Create(string modelNumber, uint? flashSize)
+        {
+            var model = ModelNumber.Parse(modelNumber);
+            return Create(model.Platform, model.CreateLCD(), flashSize);
+        }
+
+        public bool Connected => SerialPort.IsOpen;
         public void Open(string portName, int? baudRate = null, bool? twoStopBits = null)
         {
             if (!string.IsNullOrEmpty(portName)) SerialPort.PortName = portName;
@@ -80,99 +87,6 @@ namespace DgusDude
         }
         public void Close() => SerialPort.Close();
         public void Abort() => _abort = true;
-
-        //good reset sequence is: 5A, A5, 07, 82, 00, 04, 55, AA, 5A, 5A
-        public void RawWrite(int retry, params ArraySegment<byte>[] buffers)
-        {
-            int globalOffset = 0;
-            var totalBytes = buffers.Sum(v => v.Count);
-            //if (totalBytes > DWIN_REG_MAX_RW_BLEN) throw new DWINException("DWIN_Write length cannot exceed " + DWIN_REG_MAX_RW_BLEN);
-            System.Exception exNotify = null;
-            try {
-                _abort = false;
-                foreach (var v in buffers)
-                {
-
-/* Unmerged change from project 'DgusDude (net5.0)'
-Before:
-                    if (_abort) throw new DWINException("Operation aborted");
-After:
-                    if (_abort) throw new DgusDude.DWINException("Operation aborted");
-*/
-
-/* Unmerged change from project 'DgusDude (netstandard2.0)'
-Before:
-                    if (_abort) throw new DWINException("Operation aborted");
-After:
-                    if (_abort) throw new DgusDude.DWINException("Operation aborted");
-*/
-                    if (_abort) throw new Exception("Operation aborted");
-                    SerialPort.Write(v.Array, v.Offset, v.Count);
-                    DataWrite?.Invoke(this, new DataEventArgs(true, v, globalOffset, totalBytes, retry));
-                    globalOffset += v.Count;
-                }
-            } catch (System.Exception ex) {
-                exNotify = ex;
-                throw;
-            } finally {
-                DataWrite?.Invoke(this, new DataEventArgs(true, Extensions.EmptyArraySegment, globalOffset, totalBytes, retry, exNotify));
-            }
-        }
-        public void RawRead(int retry, params ArraySegment<byte>[] buffers)
-        {
-            int globalOffset = 0;
-            var totalBytes = buffers.Sum(v => v.Count);
-            if (totalBytes > 0xFF) throw new Exception("DWIN_Read length cannot exceed " + 0xFF);
-            System.Exception exNotify = null;
-            try {
-                _abort = false;
-                foreach (var v in buffers)
-                {
-                    var offset = 0;
-                    var keepBytes = 0; //min bytes begore first notify
-                    while (offset < v.Count)
-                    {
-
-/* Unmerged change from project 'DgusDude (net5.0)'
-Before:
-                        if (_abort) throw new DWINException("Operation aborted");
-After:
-                        if (_abort) throw new DgusDude.DWINException("Operation aborted");
-*/
-
-/* Unmerged change from project 'DgusDude (netstandard2.0)'
-Before:
-                        if (_abort) throw new DWINException("Operation aborted");
-After:
-                        if (_abort) throw new DgusDude.DWINException("Operation aborted");
-*/
-                        if (_abort) throw new Exception("Operation aborted");
-                        var bytesLeft = v.Count - offset;
-                        var byteRead = SerialPort.Read(v.Array, v.Offset + offset, bytesLeft);
-                        if (offset + byteRead >= 6)
-                        {
-                            DataRead?.Invoke(this, new DataEventArgs(false, new ArraySegment<byte>(v.Array, v.Offset + offset - keepBytes, byteRead + keepBytes), globalOffset, totalBytes, retry));
-                            globalOffset += byteRead + keepBytes;
-                            keepBytes = 0;
-                        }
-                        else keepBytes += byteRead;
-                        offset += byteRead;
-                    }
-                    if (keepBytes > 0)
-                    { //ensure notification
-                        DataRead?.Invoke(this, new DataEventArgs(false, new ArraySegment<byte>(v.Array, v.Offset + offset - keepBytes, keepBytes), globalOffset, totalBytes, retry));
-                        globalOffset += keepBytes;
-                    }
-                }
-            } catch (System.Exception ex) {
-                exNotify = ex;
-                throw;
-            } finally {
-                DataRead?.Invoke(this, new DataEventArgs(false, Extensions.EmptyArraySegment, globalOffset, totalBytes, retry, exNotify));
-            }
-        }
-
-        public bool Connected => SerialPort.IsOpen;
 
         public abstract void Reset(bool cpuOnly);
         public abstract void Format(Action<int> progress = null);
@@ -218,6 +132,70 @@ After:
         }
 
         public virtual TouchStatus GetTouch() { return null; }
+
+        //good reset sequence for T5 is: 5A, A5, 07, 82, 00, 04, 55, AA, 5A, 5A
+        public void RawWrite(int retry, params ArraySegment<byte>[] buffers)
+        {
+            int globalOffset = 0;
+            var totalBytes = buffers.Sum(v => v.Count);
+            //if (totalBytes > DWIN_REG_MAX_RW_BLEN) throw new DWINException("DWIN_Write length cannot exceed " + DWIN_REG_MAX_RW_BLEN);
+            System.Exception exNotify = null;
+            try {
+                _abort = false;
+                foreach (var v in buffers)
+                {
+                    if (_abort) throw new Exception("Operation aborted");
+                    SerialPort.Write(v.Array, v.Offset, v.Count);
+                    DataWrite?.Invoke(this, new DataEventArgs(true, v, globalOffset, totalBytes, retry));
+                    globalOffset += v.Count;
+                }
+            } catch (System.Exception ex) {
+                exNotify = ex;
+                throw;
+            } finally {
+                DataWrite?.Invoke(this, new DataEventArgs(true, Extensions.EmptyArraySegment, globalOffset, totalBytes, retry, exNotify));
+            }
+        }
+        public void RawRead(int retry, params ArraySegment<byte>[] buffers)
+        {
+            int globalOffset = 0;
+            var totalBytes = buffers.Sum(v => v.Count);
+            if (totalBytes > 0xFF) throw new Exception("DWIN_Read length cannot exceed " + 0xFF);
+            System.Exception exNotify = null;
+            try {
+                _abort = false;
+                foreach (var v in buffers)
+                {
+                    var offset = 0;
+                    var keepBytes = 0; //min bytes begore first notify
+                    while (offset < v.Count)
+                    {
+                        if (_abort) throw new Exception("Operation aborted");
+                        var bytesLeft = v.Count - offset;
+                        var byteRead = SerialPort.Read(v.Array, v.Offset + offset, bytesLeft);
+                        if (offset + byteRead >= 6)
+                        {
+                            DataRead?.Invoke(this, new DataEventArgs(false, new ArraySegment<byte>(v.Array, v.Offset + offset - keepBytes, byteRead + keepBytes), globalOffset, totalBytes, retry));
+                            globalOffset += byteRead + keepBytes;
+                            keepBytes = 0;
+                        }
+                        else keepBytes += byteRead;
+                        offset += byteRead;
+                    }
+                    if (keepBytes > 0)
+                    { //ensure notification
+                        DataRead?.Invoke(this, new DataEventArgs(false, new ArraySegment<byte>(v.Array, v.Offset + offset - keepBytes, keepBytes), globalOffset, totalBytes, retry));
+                        globalOffset += keepBytes;
+                    }
+                }
+            } catch (System.Exception ex) {
+                exNotify = ex;
+                throw;
+            } finally {
+                DataRead?.Invoke(this, new DataEventArgs(false, Extensions.EmptyArraySegment, globalOffset, totalBytes, retry, exNotify));
+            }
+        }
+
         public UserPacket ReadKey(int timeout = -1)
         {
             if ((Platform & Platform.TouchScreen) != Platform.TouchScreen)
@@ -236,6 +214,5 @@ After:
                 SerialPort.ReadTimeout = readTimeout;
             }
         }
-
     }
 }

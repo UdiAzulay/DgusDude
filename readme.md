@@ -12,7 +12,7 @@ so for me, DWIN uploader natural tool fail with timeout error
 
 The project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
 
-Direct Upload from powershell
+Direct Upload from PowerShell
 <pre>.Examples/DgusDevice.ps1 -Path "DWIN_SET/*.*"</pre>
 
 Direct upload from CMD
@@ -21,6 +21,20 @@ Direct upload from CMD
 Example DWIN project to show CPU usage and MEM usage on DGUS device 
 	(see <a href="Examples">Examples</a> directory for help and samples)
 
+Usage:
+<pre>
+	//create using flags
+	var d = new DgusDude.Device.Create(T5, UID1, TouchScreen);
+	
+	//create using device number
+	var d = new DgusDude.Device.Create("DMT48270C043_06WT");
+
+	using (d) {
+		d.Open("com1");			//open serial port
+		d.Pictures.Current = 3; //change device picture
+		d.Close();
+	}
+</pre>
 
 Output of print device info example: (for T5UID1)
 <pre>

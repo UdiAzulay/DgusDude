@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DgusDude
+namespace DgusDude.Core
 {
     public class ModelNumber
     {
@@ -46,23 +46,18 @@ namespace DgusDude
                 case 'T': pixelformat = System.Drawing.Imaging.PixelFormat.Format16bppRgb565; break;
                 case 'G': pixelformat = System.Drawing.Imaging.PixelFormat.Format24bppRgb; break;
             }
-            return new Core.Screen(lcdSize.Item1, lcdSize.Item2, pixelformat, inchSize);
+            return new Screen(lcdSize.Item1, lcdSize.Item2, pixelformat, inchSize);
         }
 
         public bool HasTouch => Touch != 'N' && Touch != (char)0;
         public Platform Platform => Platform.T5 | (HasTouch? Platform.TouchScreen : 0);
         private bool IsValid => (Header == "DM" && FixedUnderscore == '_' && FixedWChar == 'W');
-        public ModelNumber Parse(string value) 
+        public static ModelNumber Parse(string value) 
         {
             var ret = new ModelNumber(value); 
             if (!ret.IsValid) throw new Exception("device model format is DMxnnnnnxnnn_xnWx");
             return ret;
         }
 
-        public static Device CreateDevice(string modelNumber, uint? flashSize)
-        {
-            var model = new ModelNumber(modelNumber);
-            return Device.Create(model.Platform, model.CreateLCD(), flashSize); ;
-        }
     }
 }
