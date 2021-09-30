@@ -29,6 +29,7 @@ DgusDude by Udi Azulay 2021
 COM-Port (COM6, COM7, COM10, COM14): com14
 
 Platform     : T5, UID1, TouchScreen
+Screen       : 4.3 Inch, 272x480 0bpp
 Config       : Header: 5A-A5, Retries: 10, Options: NoAckRAM
 SerialPort   : System.IO.Ports.SerialPort
 Registers    : 2kb      (Align:1, Block:248, Page:256)
@@ -39,7 +40,6 @@ Buffer       : 64kb, 0x10000:20000
 VP           : VP On SRAM
 Pictures     : Max 240 items
 Music        : Max 256 items
-Screen       : 4.3 Inch, 272x480 0bpp
 ADC          : 7 Items
 PWM          : 3 Items
 Connected    : True

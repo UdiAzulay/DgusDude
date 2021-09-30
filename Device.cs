@@ -20,11 +20,11 @@ namespace DgusDude
     {
         public const byte MAX_PACKET_SIZE = 0xF8;
         private bool _abort = false;
+
         public Platform Platform { get; private set; }
+        public Screen Screen { get; private set; }
         public ConnectionConfig Config { get; private set; }
         public SerialPort SerialPort { get; private set; }
-        public event EventHandler<DataEventArgs> DataRead;
-        public event EventHandler<DataEventArgs> DataWrite;
 
         public MemoryAccessor Registers { get; protected set; }
         public MemoryAccessor RAM { get; protected set; }
@@ -35,7 +35,9 @@ namespace DgusDude
 
         public PictureStorage Pictures { get; protected set; }
         public MusicStorage Music { get; protected set; }
-        public Screen Screen { get; protected set; }
+
+        public event EventHandler<DataEventArgs> DataRead;
+        public event EventHandler<DataEventArgs> DataWrite;
 
         public Device(Platform platform, Screen screen)
         {
