@@ -29,11 +29,11 @@ var d = new Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen,
 		new DgusDude.Core.Screen(480, 270, 0, 4.3), null /*custom flash size*/);
 	
 //create using device number
-var d = new Device.Create("DMT48270C043_06WT");
+var d = Device.Create("DMT48270C043_06WT");
 
 using (d) {
 	d.Open("com1");		//open serial port
-	d.Pictures.Current = 3; //change device picture
+	d.Pictures.Current = 3; //set device current picture
 	d.Close();
 }
 </pre>

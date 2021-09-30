@@ -23,8 +23,6 @@ namespace DgusDude
 
         public Platform Platform { get; private set; }
         public Screen Screen { get; private set; }
-        public ConnectionConfig Config { get; private set; }
-        public SerialPort SerialPort { get; private set; }
 
         public MemoryAccessor Registers { get; protected set; }
         public MemoryAccessor RAM { get; protected set; }
@@ -35,6 +33,10 @@ namespace DgusDude
 
         public PictureStorage Pictures { get; protected set; }
         public MusicStorage Music { get; protected set; }
+
+        public ConnectionConfig Config { get; private set; }
+        public SerialPort SerialPort { get; private set; }
+        public bool Connected => SerialPort.IsOpen;
 
         public event EventHandler<DataEventArgs> DataRead;
         public event EventHandler<DataEventArgs> DataWrite;
@@ -71,13 +73,12 @@ namespace DgusDude
             else return new T5.T5Device(platform, screen, flashSize);
         }
 
-        public static Device Create(string modelNumber, uint? flashSize)
+        public static Device Create(string modelNumber, uint? flashSize = null)
         {
             var model = ModelNumber.Parse(modelNumber);
             return Create(model.Platform, model.CreateLCD(), flashSize);
         }
 
-        public bool Connected => SerialPort.IsOpen;
         public void Open(string portName, int? baudRate = null, bool? twoStopBits = null)
         {
             if (!string.IsNullOrEmpty(portName)) SerialPort.PortName = portName;
@@ -90,6 +91,7 @@ namespace DgusDude
 
         public abstract void Reset(bool cpuOnly);
         public abstract void Format(Action<int> progress = null);
+        public virtual TouchStatus GetTouch() { return null; }
 
         protected abstract void UploadBin(int index, byte[] data, bool verify = false);
         public virtual bool Upload(string fileName, bool verify = false)
@@ -130,8 +132,6 @@ namespace DgusDude
             }
             return false;
         }
-
-        public virtual TouchStatus GetTouch() { return null; }
 
         //good reset sequence for T5 is: 5A, A5, 07, 82, 00, 04, 55, AA, 5A, 5A
         public void RawWrite(int retry, params ArraySegment<byte>[] buffers)
