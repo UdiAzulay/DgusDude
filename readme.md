@@ -1,24 +1,24 @@
 ﻿a .Net libaray and download tool to control DWIN DGUS devices over serial port
 
--Supported devices: T5, T5L, K600 (partial support)
+Supported devices: T5, T5L, K600 (partial support)
 
--Supported file types: BMP, JPG, BIN, LIB, HZK, DZK, ICO, DWINOS*.BIN
+Supported file types: BMP, JPG, BIN, LIB, HZK, DZK, ICO, DWINOS*.BIN
 
--About:
+About:
 I originally developed it after failing to upload a custom firmware to my 3d printer using the SD card,
 for some reason my SD Card stop loading the update screen and
 it seems that my version of DWIN OS is NoAck (does not response 0x4F4B for 0x83 commands)
 so for me, DWIN uploader natural tool fail with timeout error
 
--This project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
+The project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
 
--Direct Upload from powershell
+Direct Upload from powershell
 <pre>.Examples/DgusDevice.ps1 -Path "DWIN_SET/*.*"</pre>
 
--Direct upload from CMD
+Direct upload from CMD
 <pre>Powershell -executionpolicy remotesigned -File Examples\DgusDevice.ps1 -Path "DWIN_SET/*.*"</pre>
 
--Example DWIN project to show CPU usage and MEM usage on DGUS device 
+Example DWIN project to show CPU usage and MEM usage on DGUS device 
 	(see <a href="Examples">Examples</a> directory for help and samples)
 
 
