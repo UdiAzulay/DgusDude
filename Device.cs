@@ -138,7 +138,7 @@ namespace DgusDude
         {
             int globalOffset = 0;
             var totalBytes = buffers.Sum(v => v.Count);
-            //if (totalBytes > DWIN_REG_MAX_RW_BLEN) throw new DWINException("DWIN_Write length cannot exceed " + DWIN_REG_MAX_RW_BLEN);
+            //if (totalBytes > DWIN_REG_MAX_RW_BLEN) throw new Exception("RawWrite length cannot exceed " + DWIN_REG_MAX_RW_BLEN);
             System.Exception exNotify = null;
             try {
                 _abort = false;
@@ -160,7 +160,7 @@ namespace DgusDude
         {
             int globalOffset = 0;
             var totalBytes = buffers.Sum(v => v.Count);
-            if (totalBytes > 0xFF) throw new Exception("DWIN_Read length cannot exceed " + 0xFF);
+            if (totalBytes > 0xFF) throw new Exception("RawRead length cannot exceed " + 0xFF);
             System.Exception exNotify = null;
             try {
                 _abort = false;
