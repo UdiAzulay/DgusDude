@@ -24,8 +24,8 @@ Example DWIN project to show CPU usage and MEM usage on DGUS device
 Usage:
 <pre>
 //create using flags
-var d = new DgusDude.Device.Create(T5, UID1, TouchScreen, 
-		new DgusDude.Core.Screen(480, 270, 0, 4.3));
+var d = new DgusDude.Device.Create(T5 | UID1 | TouchScreen, 
+		new DgusDude.Core.Screen(480, 270, 0, 4.3), null /*custom flush size*/);
 	
 //create using device number
 var d = new DgusDude.Device.Create("DMT48270C043_06WT");
