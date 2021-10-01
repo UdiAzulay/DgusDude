@@ -25,7 +25,7 @@ Usage:
 <pre>
 using DgusDude;
 //create using flags
-var d = new Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen, 
+var d = Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen, 
 		new DgusDude.Core.Screen(480, 270, 0, 4.3), null /*custom flash size*/);
 	
 //create using device number

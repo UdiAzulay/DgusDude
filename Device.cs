@@ -35,8 +35,8 @@ namespace DgusDude
         public MusicStorage Music { get; protected set; }
 
         public ConnectionConfig Config { get; private set; }
-        public SerialPort SerialPort { get; private set; }
-        public bool Connected => SerialPort.IsOpen;
+        public SerialPort Connection { get; private set; }
+        public bool Connected => Connection.IsOpen;
 
         public event EventHandler<DataEventArgs> DataRead;
         public event EventHandler<DataEventArgs> DataWrite;
@@ -46,7 +46,7 @@ namespace DgusDude
             Platform = platform;
             Screen = screen;
             Config = new ConnectionConfig();
-            SerialPort = new SerialPort()
+            Connection = new SerialPort()
             {
                 BaudRate = 115200,
                 DataBits = 8,
@@ -61,9 +61,9 @@ namespace DgusDude
         public void Dispose() { Dispose(true); GC.SuppressFinalize(this); }
         protected virtual void Dispose(bool disposing)
         {
-            if (SerialPort == null) return;
-            if (SerialPort.IsOpen) SerialPort.Close();
-            SerialPort.Dispose();
+            if (Connection == null) return;
+            if (Connection.IsOpen) Connection.Close();
+            Connection.Dispose();
         }
 
         public static Device Create(Platform platform, Screen screen, uint? flashSize = null)
@@ -81,12 +81,12 @@ namespace DgusDude
 
         public void Open(string portName, int? baudRate = null, bool? twoStopBits = null)
         {
-            if (!string.IsNullOrEmpty(portName)) SerialPort.PortName = portName;
-            if (baudRate.HasValue) SerialPort.BaudRate = baudRate.Value;
-            if (twoStopBits.HasValue) SerialPort.StopBits = twoStopBits.Value ? StopBits.Two : StopBits.One;
-            SerialPort.Open();
+            if (!string.IsNullOrEmpty(portName)) Connection.PortName = portName;
+            if (baudRate.HasValue) Connection.BaudRate = baudRate.Value;
+            if (twoStopBits.HasValue) Connection.StopBits = twoStopBits.Value ? StopBits.Two : StopBits.One;
+            Connection.Open();
         }
-        public void Close() => SerialPort.Close();
+        public void Close() => Connection.Close();
         public void Abort() => _abort = true;
 
         public abstract void Reset(bool cpuOnly);
@@ -145,7 +145,7 @@ namespace DgusDude
                 foreach (var v in buffers)
                 {
                     if (_abort) throw new Exception("Operation aborted");
-                    SerialPort.Write(v.Array, v.Offset, v.Count);
+                    Connection.Write(v.Array, v.Offset, v.Count);
                     DataWrite?.Invoke(this, new DataEventArgs(true, v, globalOffset, totalBytes, retry));
                     globalOffset += v.Count;
                 }
@@ -172,7 +172,7 @@ namespace DgusDude
                     {
                         if (_abort) throw new Exception("Operation aborted");
                         var bytesLeft = v.Count - offset;
-                        var byteRead = SerialPort.Read(v.Array, v.Offset + offset, bytesLeft);
+                        var byteRead = Connection.Read(v.Array, v.Offset + offset, bytesLeft);
                         if (offset + byteRead >= 6)
                         {
                             DataRead?.Invoke(this, new DataEventArgs(false, new ArraySegment<byte>(v.Array, v.Offset + offset - keepBytes, byteRead + keepBytes), globalOffset, totalBytes, retry));
@@ -200,9 +200,9 @@ namespace DgusDude
         {
             if ((Platform & Platform.TouchScreen) != Platform.TouchScreen)
                 throw new NotSupportedException();
-            var readTimeout = SerialPort.ReadTimeout;
+            var readTimeout = Connection.ReadTimeout;
             var header = new PacketHeader((VP.Memory as MemoryDirectAccessor).AddressMode, Config.Header.Length, 0);
-            SerialPort.ReadTimeout = timeout;
+            Connection.ReadTimeout = timeout;
             try {
                 RawRead(0, header.Data);
                 var ret = new UserPacket(RAM, header.Address, header.DataLength);
@@ -211,7 +211,7 @@ namespace DgusDude
             } catch (TimeoutException) {
                 return null;
             } finally {
-                SerialPort.ReadTimeout = readTimeout;
+                Connection.ReadTimeout = readTimeout;
             }
         }
     }
