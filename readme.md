@@ -11,6 +11,9 @@ it seems that my version of DWIN OS is NoAck (does not response 0x4F4B for 0x83 
 so for me, DWIN uploader natural tool fail with timeout error
 
 The project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
+and an Example DWIN project to show PC CPU usage and MEM usage on connected DGUS device 
+	(see <a href="Examples">Examples</a> directory for help and samples)
+
 
 Direct Upload from PowerShell
 <pre>.Examples/DgusDevice.ps1 -Path "DWIN_SET/*.*"</pre>
@@ -18,21 +21,20 @@ Direct Upload from PowerShell
 Direct upload from CMD
 <pre>Powershell -executionpolicy remotesigned -File Examples\DgusDevice.ps1 -Path "DWIN_SET/*.*"</pre>
 
-Example DWIN project to show CPU usage and MEM usage on DGUS device 
-	(see <a href="Examples">Examples</a> directory for help and samples)
-
 Usage:
 <pre>
 using DgusDude;
-//create using flags
+
+//create using parameters
 var d = Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen, 
 		new DgusDude.Core.Screen(480, 270, 0, 4.3), null /*custom flash size*/);
 	
-//create using device number
-var d = Device.Create("DMT48270C043_06WT");
+//or create using model number
+//var d = Device.Create("DMT48270C043_06WT");
 
-using (d) {
+using (d) {		//implicit Displose()
 	d.Open("com1");		//open serial port
+	d.Upload("3 image.jpg");	//upload picture to location 3
 	d.Pictures.Current = 3; //set device current picture
 	d.Close();
 }
@@ -46,8 +48,6 @@ COM-Port (COM6, COM7, COM10, COM14): com14
 
 Platform     : T5, UID1, TouchScreen
 Screen       : 4.3 Inch, 272x480 0bpp
-Config       : Header: 5A-A5, Retries: 10, Options: NoAckRAM
-SerialPort   : System.IO.Ports.SerialPort
 Registers    : 2kb      (Align:1, Block:248, Page:256)
 RAM          : 128kb    (Align:2, Block:248, Page:0)
 Storage      : 65536kb  (Align:4, Block:262144, Page:32768)
@@ -58,6 +58,8 @@ Pictures     : Max 240 items
 Music        : Max 256 items
 ADC          : 7 Items
 PWM          : 3 Items
+Config       : Header: 5A-A5, Retries: 10, Options: NoAckRAM
+Connection   : System.IO.Ports.SerialPort
 Connected    : True
 
 DeviceID      : 8671135961630377990
