@@ -10,8 +10,9 @@ for some reason my SD Card stop loading the update screen and
 it seems that my version of DWIN OS is NoAck (does not response 0x4F4B for 0x83 commands)
 so for me, DWIN uploader natural tool fail with timeout error
 
-**only tested on T5UID device (the only device i own), 
-all other devices implemented based on <a href="http://www.dwin.com.cn/service/en/file/id/13">DWIN website documentation</a> but never tested.
+**tested only on T5UID device (the only one i own), 
+other devices implemented based on <a href="http://www.dwin.com.cn/service/en/file/id/13">DWIN website documentation</a> but never tested.
+in any case, USE ON YOUR OWN RISK!!!
 
 This project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
 and an Example DWIN project to show PC CPU and MEM usage on connected DGUS device 
