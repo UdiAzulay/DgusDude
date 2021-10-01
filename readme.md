@@ -10,16 +10,16 @@ for some reason my SD Card stop loading the update screen and
 it seems that my version of DWIN OS is NoAck (does not response 0x4F4B for 0x83 commands)
 so for me, DWIN uploader natural tool fail with timeout error
 
-**tested only on T5UID device (the only one i own), 
-other devices implemented based on <a href="http://www.dwin.com.cn/service/en/file/id/13">DWIN website documentation</a> but never tested.
+**tested only on T5UID device (the only device I own), 
+other devices implemented based on <a target="_blank" href="http://www.dwin.com.cn/service/en/file/id/13">DWIN website documentation</a> but never tested.
 in any case, USE ON YOUR OWN RISK!!!
 
-This project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
-and an Example DWIN project to show PC CPU and MEM usage on connected DGUS device 
+This project also contains small script that allows you to upload DWIN_SET folder without SD card  (for supported devices)
+and an Example DWIN project that shows local PC CPU and MEM usage to connected DGUS device 
 	(see <a href="Examples">Examples</a> directory for more help and samples)
 
 
-Direct Upload from PowerShell
+Direct upload from PowerShell
 <pre>.Examples/DgusDevice.ps1 -Path "DWIN_SET/*.*"</pre>
 
 Direct upload from CMD
@@ -31,12 +31,12 @@ using DgusDude;
 
 //create using parameters
 var d = Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen, 
-		new DgusDude.Core.Screen(480, 270, 0, 4.3), null /*custom flash size*/);
+		new DgusDude.Core.Screen(480, 270, 0 /*pixel format*/, 4.3), null /*custom flash size*/);
 	
 //or create using model number
 //var d = Device.Create("DMT48270C043_06WT");
 
-using (d) {					//implicit Displose()
+using (d) {				//implicit dispose
 	d.Open("com1");			//open serial port
 	d.Upload(@"c:\3 image.jpg");	//upload picture to location 3
 	d.Pictures.Current = 3;		//set device current picture
