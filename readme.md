@@ -6,13 +6,16 @@ Supported file types: BMP, JPG, BIN, LIB, HZK, DZK, ICO, DWINOS*.BIN
 
 About:
 I originally developed it after failing to upload a custom firmware to my 3d printer using the SD card,
-for some reason my SD Card stop loading the update screen and
+for some reason my SD interface stop loading the update screen and
 it seems that my version of DWIN OS is NoAck (does not response 0x4F4B for 0x83 commands)
 so for me, DWIN uploader natural tool fail with timeout error
 
 This project also contains small script that allows you to upload DWIN_SET folder without SD card  (for supported devices)
-and an Example DWIN project that shows local PC CPU and MEM usage to connected DGUS device 
+and an Example DWIN project that shows local PC CPU and MEM usage on connected DGUS device 
 	(see <a href="Examples">Examples</a> directory for more help and samples)
+
+known issues:
+WAV uploader not working, only integer VP values can be updated (issue with double and TEXT mapping)
 
 **tested only on T5UID device (the only device I own), 
 other devices implemented based on <a target="_blank" href="http://www.dwin.com.cn/service/en/file/id/13">DWIN documentation</a> but never tested.
@@ -36,7 +39,7 @@ var d = Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen,
 //var d = Device.Create("DMT48270C043_06WT");
 
 using (d) {				//implicit dispose
-	d.Open("com1");			//open serial port
+	d.Open("com1", 115200);			//open serial port
 	d.Upload(@"c:\3 image.jpg");	//upload picture to location 3
 	d.Pictures.Current = 3;		//set device current picture
 	d.Close();
