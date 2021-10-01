@@ -10,9 +10,12 @@ for some reason my SD Card stop loading the update screen and
 it seems that my version of DWIN OS is NoAck (does not response 0x4F4B for 0x83 commands)
 so for me, DWIN uploader natural tool fail with timeout error
 
-The project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
-and an Example DWIN project to show PC CPU usage and MEM usage on connected DGUS device 
-	(see <a href="Examples">Examples</a> directory for help and samples)
+**only tested on T5UID device (the only device i own), 
+all other devices implemented based on <a href="http://www.dwin.com.cn/service/en/file/id/13">DWIN website documentation</a> but never tested.
+
+This project also contains small script that allow you to upload DWIN_SET folder without SD card  (for supported devices)
+and an Example DWIN project to show PC CPU and MEM usage on connected DGUS device 
+	(see <a href="Examples">Examples</a> directory for more help and samples)
 
 
 Direct Upload from PowerShell
@@ -32,10 +35,10 @@ var d = Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen,
 //or create using model number
 //var d = Device.Create("DMT48270C043_06WT");
 
-using (d) {		//implicit Displose()
-	d.Open("com1");		//open serial port
-	d.Upload("3 image.jpg");	//upload picture to location 3
-	d.Pictures.Current = 3; //set device current picture
+using (d) {					//implicit Displose()
+	d.Open("com1");			//open serial port
+	d.Upload(@"c:\3 image.jpg");	//upload picture to location 3
+	d.Pictures.Current = 3;		//set device current picture
 	d.Close();
 }
 </pre>
