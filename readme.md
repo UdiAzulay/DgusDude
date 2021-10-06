@@ -1,8 +1,8 @@
 ﻿a .Net libaray and download tool to control DWIN DGUS devices over serial port
 
-Supported devices: T5, T5L, K600 (partial support)
+Supported devices: T5, T5L, K600, Mini DUGS (partial support)
 
-Supported file types: BMP, JPG, BIN, LIB, HZK, DZK, ICO, DWINOS*.BIN
+Supported file types: BMP, JPG, BIN, LIB, HZK, DZK, ICO, ICL, DWINOS*.BIN
 
 About:
 I originally developed it after failing to upload a custom firmware to my 3d printer using the SD card,
@@ -42,6 +42,7 @@ using (d) {				//implicit dispose
 	d.Open("com1", 115200);		//open serial port
 	d.Upload(@"c:\3 image.jpg");	//upload picture to location 3
 	d.Pictures.Current = 3;		//set device current picture
+	var pressed = d.Touch?.ReadKey();	//wait for device touch screen button press
 	d.Close();
 }
 </pre>

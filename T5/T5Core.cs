@@ -41,10 +41,10 @@ namespace DgusDude.T5
         public override bool Upload(Stream stream, string fileExt, int? index, bool verify = false)
         {
             if (new[] { "HZK", "DZK", "BIN", "ICO" }.Contains(fileExt)) {
-                Upload(Storage, Storage.PageSize, stream, index.Value, verify);
+                Upload(Storage, 0x40000 /*256kb*/, stream, index.Value, verify);
                 return true;
             } else if (fileExt.Equals("LIB")) {
-                Upload(UserSettings, 0x1000u, stream, index.Value, verify);
+                Upload(UserSettings, 0x1000, stream, index.Value, verify);
                 return true;
             } else if (fileExt.Equals("DWINOS")) { 
                 Upload_OS(stream, 0x10);

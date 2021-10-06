@@ -24,8 +24,11 @@ namespace DgusDude.T5L
         {
             switch (fileExt)
             {
-                case "BMP": Upload(Storage, Storage.PageSize, stream, index.Value, verify); return true;
-                case "JPG": return false;
+                case "JPG":
+                case "ICL":
+                    Upload(Storage, 0x40000/*256kb*/, stream, index.Value, verify); 
+                    return true;
+                case "BMP": return false;
             }
             return base.Upload(stream, fileExt, index, verify);
         }

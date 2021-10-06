@@ -41,11 +41,6 @@ namespace DgusDude.T5
         }
 
         public DeviceInfo GetDeviceInfo() => new DeviceInfo(this);
-        protected override void Upload(MemoryAccessor mem, uint pageSize, Stream stream, int index, bool verify = false)
-        {
-            if (mem == Storage) pageSize = 0x40000; //256kb
-            base.Upload(mem, pageSize, stream, index, verify);
-        }
         public override bool Upload(Stream stream, string fileExt, int? index, bool verify = false)
         {
             switch (fileExt) { 

@@ -2,6 +2,8 @@
 namespace DgusDude.K600
 {
     using Core;
+    using System.IO;
+
     public class K600Device : Device
     {
         public K600Device(Platform platform, Screen screen, uint? flashSize = null) : base(platform, screen)
@@ -22,6 +24,17 @@ namespace DgusDude.K600
 
         public override void Reset(bool cpuOnly) => VP.Write(0xEE, new byte[] { 0x5A, 0xA5 });        
         public DeviceInfo GetDeviceInfo() => new DeviceInfo(this);
+
+        public override bool Upload(Stream stream, string fileExt, int? index, bool verify = false)
+        {
+            if (fileExt == "BMP") {
+                using (var bmp = new System.Drawing.Bitmap(stream))
+                    using (var ms = new MemoryStream(bmp.GetBytes(System.Drawing.Imaging.PixelFormat.Format24bppRgb)))
+                        Upload(Storage, Screen.Width * Screen.Height * 3, ms, index.Value, verify);
+                return true;
+            }
+            return base.Upload(stream, fileExt, index, verify);
+        }
 
     }
 }
