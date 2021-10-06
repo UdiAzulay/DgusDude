@@ -19,6 +19,7 @@ namespace DgusDude.Core
 
         public void Write(ArraySegment<byte> data, bool verify = false, int address = 0)
         {
+            if (data.Count > Length) throw new System.Exception("buffer size is too small, use Buffer.Length to enlarge it");
             Memory.Write(Address + address, data, verify);
         }
 

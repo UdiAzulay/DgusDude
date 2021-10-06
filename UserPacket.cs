@@ -3,9 +3,9 @@
 namespace DgusDude
 {
     using Core;
-    public class UserPacket : Core.PackedData
+    public class UserPacket : PackedData
     {
-        public UserPacket(Core.IDeviceAccessor mem, int address, int size) 
+        public UserPacket(IDeviceAccessor mem, int address, int size) 
             : base(mem, address, new byte[size], false, false) 
         { }
 

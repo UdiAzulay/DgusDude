@@ -4,7 +4,7 @@ namespace DgusDude.Core
 {
     public abstract class MusicStorage
     {
-        public readonly Device Device;
+        protected readonly Device Device;
         public readonly uint BlockSize;
         public uint Length { get; private set; }
         public override string ToString() { return string.Format("Max {0} items", Length); }

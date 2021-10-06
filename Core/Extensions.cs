@@ -42,6 +42,7 @@ namespace DgusDude.Core
                 if (b1[b1Offset + i] != b2[b2Offset + i]) return false;
             return true;
         }
+
         public static byte[] GetBytes(this System.Drawing.Bitmap bitmap, System.Drawing.Imaging.PixelFormat pixelFormat)
         {
             byte[] data;
@@ -55,6 +56,14 @@ namespace DgusDude.Core
             return data;
         }
 
+        public static void SwapFileBytes(byte[] data, int startIndex, int length)
+        {
+            byte tmp;
+            for (var i = startIndex; i < (startIndex + length); i += 2)
+            {
+                tmp = data[i]; data[i] = data[i + 1]; data[i + 1] = tmp;
+            }
+        }
 
     }
 }

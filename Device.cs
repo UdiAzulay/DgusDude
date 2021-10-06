@@ -10,7 +10,8 @@ namespace DgusDude
     public enum Platform
     {
         ProcessorMask = 0x07, PlatformMask = 0x70,
-        K600 = 0x01, T5 = 0x02, T5L = 0x03,
+        K600 = 0x01, K600Mini = 2,
+        T5 = 0x04, T5L1 = 0x05, T5L2 = 0x06,
         RTC = 0x08,
         UID1 = 0x10, UID2 = 0x20, UID3 = 0x30,
         TouchScreen = 0x80
@@ -34,6 +35,10 @@ namespace DgusDude
         public PictureStorage Pictures { get; protected set; }
         public MusicStorage Music { get; protected set; }
 
+        public Touch Touch { get; protected set; }
+        public PWM PWM { get; protected set; }
+        public ADC ADC { get; protected set; }
+
         public ConnectionConfig Config { get; private set; }
         public SerialPort Connection { get; private set; }
         public bool Connected => Connection.IsOpen;
@@ -41,7 +46,7 @@ namespace DgusDude
         public event EventHandler<DataEventArgs> DataRead;
         public event EventHandler<DataEventArgs> DataWrite;
 
-        public Device(Platform platform, Screen screen)
+        protected Device(Platform platform, Screen screen)
         {
             Platform = platform;
             Screen = screen;
@@ -68,9 +73,18 @@ namespace DgusDude
 
         public static Device Create(Platform platform, Screen screen, uint? flashSize = null)
         {
-            if ((platform & Platform.ProcessorMask) == Platform.K600)
-                return new K600.K600Device(platform, screen, flashSize);
-            else return new T5.T5Device(platform, screen, flashSize);
+            switch(platform & Platform.ProcessorMask) {
+                default: 
+                    throw new ArgumentException("platform");
+                case Platform.K600:
+                case Platform.K600Mini:
+                    return new K600.K600Device(platform, screen, flashSize);
+                case Platform.T5: 
+                    return new T5.T5Device(platform, screen, flashSize);
+                case Platform.T5L1:
+                case Platform.T5L2: 
+                    return new T5L.T5LDevice(platform, screen, flashSize);
+            }
         }
 
         public static Device Create(string modelNumber, uint? flashSize = null)
@@ -90,10 +104,19 @@ namespace DgusDude
         public void Abort() => _abort = true;
 
         public abstract void Reset(bool cpuOnly);
-        public abstract void Format(Action<int> progress = null);
-        public virtual TouchStatus GetTouch() { return null; }
+        public virtual void Format(Action<int> progress = null)
+        {
+            if (Storage != null) Storage.MemSet(0, Storage.Length, Extensions.EmptyArraySegment, false);
+            if (UserSettings != null) Storage.MemSet(0, UserSettings.Length, Extensions.EmptyArraySegment, false);
+        }
 
-        protected abstract void UploadBin(int index, byte[] data, bool verify = false);
+        protected virtual void Upload(MemoryAccessor mem, uint pageSize, System.IO.Stream stream, int index, bool verify = false)
+        {
+            var maxIndex = mem.Length / pageSize;
+            if (index < 0 || index > maxIndex) throw Exception.CreateOutOfRange(index, pageSize);
+            var address = (int)(index * pageSize); //256kb blocks
+            mem.Write(address, stream, verify);
+        }
         public virtual bool Upload(string fileName, bool verify = false)
         {
             var fileNameOnly = System.IO.Path.GetFileName(fileName);
@@ -104,34 +127,11 @@ namespace DgusDude
                 if (i > 0) fileIndex = int.Parse(fileNameOnly.Substring(0, i));
                 break;
             }
-            var ext = System.IO.Path.GetExtension(fileName)?.ToUpper()?.TrimStart('.');
-            switch (ext)
-            {
-                case "JPG":
-                    using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                        Pictures.UploadPicture(fileIndex, f, System.Drawing.Imaging.ImageFormat.Jpeg, verify);
-                    return true;
-                case "BMP":
-                    using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                        Pictures.UploadPicture(fileIndex, f, System.Drawing.Imaging.ImageFormat.Bmp, verify);
-                    return true;
-                case "WAV":
-                    using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                        Music.Upload(fileIndex, f, verify);
-                    return true;
-                case "HZK":
-                case "DZK":
-                case "BIN":
-                case "ICO":
-                    UploadBin(fileIndex, System.IO.File.ReadAllBytes(fileName));
-                    return true;
-                case "LIB":
-                    if (fileIndex < 0 || fileIndex > 80) throw Exception.CreateFileIndex(fileName);
-                    UserSettings.Write((int)(fileIndex * 0x1000u), new ArraySegment<byte>(System.IO.File.ReadAllBytes(fileName)), verify);
-                    return true;
-            }
-            return false;
+            var ext = System.IO.Path.GetExtension(fileName)?.TrimStart('.');
+            using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                return Upload(f, ext, fileIndex, verify);
         }
+        public virtual bool Upload(System.IO.Stream stream, string fileExt, int? index, bool verify = false) => false;
 
         //good reset sequence for T5 is: 5A, A5, 07, 82, 00, 04, 55, AA, 5A, 5A
         public void RawWrite(int retry, params ArraySegment<byte>[] buffers)
@@ -196,23 +196,5 @@ namespace DgusDude
             }
         }
 
-        public UserPacket ReadKey(int timeout = -1)
-        {
-            if ((Platform & Platform.TouchScreen) != Platform.TouchScreen)
-                throw new NotSupportedException();
-            var readTimeout = Connection.ReadTimeout;
-            var header = new PacketHeader((VP.Memory as MemoryDirectAccessor).AddressMode, Config.Header.Length, 0);
-            Connection.ReadTimeout = timeout;
-            try {
-                RawRead(0, header.Data);
-                var ret = new UserPacket(RAM, header.Address, header.DataLength);
-                RawRead(0, new ArraySegment<byte>(ret.Data));
-                return ret;
-            } catch (TimeoutException) {
-                return null;
-            } finally {
-                Connection.ReadTimeout = readTimeout;
-            }
-        }
     }
 }

@@ -39,7 +39,7 @@ var d = Device.Create(Platform.T5 | Platform.UID1 | Platform.TouchScreen,
 //var d = Device.Create("DMT48270C043_06WT");
 
 using (d) {				//implicit dispose
-	d.Open("com1", 115200);			//open serial port
+	d.Open("com1", 115200);		//open serial port
 	d.Upload(@"c:\3 image.jpg");	//upload picture to location 3
 	d.Pictures.Current = 3;		//set device current picture
 	d.Close();

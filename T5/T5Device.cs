@@ -1,111 +1,112 @@
 ﻿using System;
+using System.IO;
 
 namespace DgusDude.T5
 {
     using Core;
-    public class T5Device : Device
+    class T5Device : T5Core
     {
-        private static byte[] T5_ACK_VALUE = new byte[] { 0x4F, 0x4B };
-        public T5Device(Platform platform, Screen screen, uint? flashSize) 
+        public T5Device(Platform platform, Screen screen, uint? flashSize = null)
             : base(platform, screen)
         {
-            Config.AckValue = T5_ACK_VALUE;
-            var platMask = platform & Platform.PlatformMask;
-            var addressMode = AddressMode.Size2 | AddressMode.Shift1;
-            switch (platform & Platform.ProcessorMask) {
-                default: throw new ArgumentOutOfRangeException("processor");
-                case Platform.T5:
-                    Registers = new MemoryDirectAccessor(this, 0x900, 1, addressMode, 0x81, 0x80, 0x100); //2k Registers
-                    RAM = new MemoryDirectAccessor(this, 0x20000, 2, addressMode | AddressMode.ShiftRead, 0x83, 0x82); //128kb
-                    UserSettings = new NorAccessor(this, 0x50000); //320kb 3FFF0
-                    break;
-                case Platform.T5L:
-                    Registers = new MemoryDirectAccessor(this, 0x900, 1, addressMode, 0x81, 0x80, 0x100); //2k Registers
-                    RAM = new MemoryDirectAccessor(this, 0x20000, 2, addressMode | AddressMode.ShiftRead, 0x83, 0x82); //128kb
-                    UserSettings = new NorAccessor(this, 0x50000); //320kb 3FFF0
-                    break;
-            }
-            VP = new VP(RAM);
-            Buffer = new MemoryBuffer(RAM, 0x10000, 0x10000);
-            ADC = new ADC(this);
             if (!flashSize.HasValue) flashSize = 0x04000000; //64MB
-            if (platMask == Platform.UID2)
-                Storage = new NandAccessor(this, flashSize.Value, 0x020000/*128Kb*/, 0x8000 /*32kb*/); //64MB
-            else {
-                Storage = new NandAccessor(this, flashSize.Value, 0x040000/*256Kb*/, 0x8000 /*32kb*/); //64MB
-                PWM = new PWM(this);
-            } 
-            Pictures = new PictureStorage(this, 240);
-            Music = new MusicStorage(this, (flashSize.Value >> 1) / 0x020000/*128Kb*/, flashSize.Value >> 1 /*last half*/);
-        }
-
-        public ADC ADC { get; private set; }
-        public PWM PWM { get; private set; }
-
-        public override void Reset(bool cpuOnly = false) => VP.Write(0x04, new byte[] { 0x55, 0xAA, 0x5A, (byte)(cpuOnly ? 0xA5 : 0x5A) });
-        public DeviceInfo GetDeviceInfo() => new DeviceInfo(this);
-        public SystemConfig GetDeviceConfig(bool refresh = true) => new SystemConfig(this, refresh);
-        public LCDBrightness GetBrightness(bool refresh = true) => new LCDBrightness(this, refresh);
-
-        protected class T5TouchStatus : TouchStatus
-        {
-            public T5TouchStatus(Device device, bool refresh = true) : base(device, 0x16, 8, refresh) { }
-            public override void Simulate(TouchAction action, uint x, uint y)
+            var musicOffset = flashSize.Value >> 1;
+            Storage = (platform & Platform.PlatformMask) == Platform.UID2 ?
+                new NandAccessor(this, flashSize.Value, 0x040000 /*128kw*/, 0x8000 /*not needed*/) :
+                new NandAccessor(this, flashSize.Value, 0x080000 /*256kw*/, 0x8000 /*32kb*/);
+            Pictures = new PictureStorage(this, musicOffset / Storage.PageSize);
+            Music = new MusicStorage(this, (flashSize.Value - musicOffset) / 0x020000/*128Kb*/, musicOffset);
+            if ((Platform & Platform.TouchScreen) != 0) Touch = new Touch(this);
+            switch (platform & Platform.PlatformMask)
             {
-                var val = new byte[8] { 0x5A, 0xA5, 00, (byte)action, 0, 0, 0, 0 };
-                ((int)x).ToLittleEndien(val, 4, 2);
-                ((int)y).ToLittleEndien(val, 6, 2);
-                Memory.Write(0xD4, new ArraySegment<byte>(val));
-                (Memory as VP).Wait(0xD4);
+                case Platform.UID1:
+                    PWM = new PWM(this, 3); //only on T5UID1
+                    ADC = new ADC(this, 4);
+                    break;
+                case Platform.UID3:
+                case Platform.UID2:
+                    ADC = new ADC(this, 2);
+                    break;
             }
-        }
-        public override TouchStatus GetTouch()
-        {
-            if ((Platform & Platform.TouchScreen) == 0) return base.GetTouch();
-            return new T5TouchStatus(this);
-        }
-
-        public void UploadOS(byte[] data, byte target = 0x10, bool verify = false)
-        {
-            var offset = target == 0x10 ? 0x1000 : 0; //DWIN cache org
-            var bufSize = (target == 0x10 ? 0x7000 /*28kb*/: 0x10000/*64kb*/) - offset;
-            if (bufSize > Buffer.Length) throw new System.Exception("buffer size too small");
-            if (data.Length > bufSize) throw new System.Exception("file too big to upload");
-            var newBufffer = new byte[bufSize];
-            Array.Copy(data, offset, newBufffer, 0, data.Length - offset);
-            //for (var i = data.Length - offset; i < newBufffer.Length; i++) newBufffer[i] = byte.MaxValue;
-            RAM.Write(Buffer.Address, new ArraySegment<byte>(newBufffer), verify);
-            var sramAddress = (Buffer.Address >> 1).ToLittleEndien(2);
-            VP.Write(0x06, new byte[] {
-                0x5A, //fixed
-                target, // 0x10: DWIN OS user code - 28kb, 0x5A: 8051 code - 64kb
-                sramAddress[0], sramAddress[1], //SRAM position
-            });
-            System.Threading.Thread.Sleep(200); //minimum wait time
-            VP.Wait(0x06);
-        }
-        protected override void UploadBin(int fileIndex, byte[] data, bool verify = false)
-        {
-            if (fileIndex < 0 || fileIndex > 127) throw Exception.CreateOutOfRange(fileIndex, 127);
-            var address = (int)(fileIndex * (Storage as NandAccessor).BlockSize); //256kb blocks
-            Storage.Write(address, new ArraySegment<byte>(), verify);
-        }
-        public override bool Upload(string fileName, bool verify = false)
-        {
-            if (fileName.StartsWith("T5", StringComparison.InvariantCultureIgnoreCase))
-                return false; //skip - unable to upload it
-            if (fileName.StartsWith("DWINOS", StringComparison.InvariantCultureIgnoreCase))
-            {
-                UploadOS(System.IO.File.ReadAllBytes(fileName), 0x10);
-                return true;
-            }
-            return base.Upload(fileName, verify);
         }
 
         public override void Format(Action<int> progress = null)
         {
-            Buffer.Clear(Storage.PageSize);
-
+            base.Format(progress);
+            //clear pictures, assume buffer is clear
+            for (uint i = 0; i < Screen.FrameSize; i += Buffer.Length)
+                Upload_Bmp((int)i, (int)Buffer.Length, false);
+            for (var i = 0; i < Pictures.Length; i++)
+                Pictures.TakeScreenshot(i);
         }
+
+        public DeviceInfo GetDeviceInfo() => new DeviceInfo(this);
+        protected override void Upload(MemoryAccessor mem, uint pageSize, Stream stream, int index, bool verify = false)
+        {
+            if (mem == Storage) pageSize = 0x40000; //256kb
+            base.Upload(mem, pageSize, stream, index, verify);
+        }
+        public override bool Upload(Stream stream, string fileExt, int? index, bool verify = false)
+        {
+            switch (fileExt) { 
+                case "JPG": 
+                    Upload_Jpg(stream, true, (ushort)index.Value, verify);
+                    return true;
+                case "BMP":
+                    using (var bmp = new System.Drawing.Bitmap(stream))
+                        Upload_Bmp(bmp.GetBytes(Screen.PixelFormat), true, verify);
+                    Pictures.TakeScreenshot(index.Value);
+                    return true;
+                case "WAV": 
+                    Music.Upload(index.Value, stream, verify);
+                    break;
+            }
+            return base.Upload(stream, fileExt, index, verify);
+        }
+
+        //upload 16 bit per pixel data, 
+        private void Upload_Bmp(byte[] data, bool swapBytes = false, bool verify = false)
+        {
+            var offset = 0;
+            if (swapBytes) Extensions.SwapFileBytes(data, 0, data.Length);
+            foreach (var v in new Slicer(new ArraySegment<byte>(data), Buffer.Length))
+            {
+                Buffer.Write(v, verify);
+                Upload_Bmp(offset, v.Count, verify);
+                offset += v.Count;
+            }
+        }
+
+        //supported only on T5UID1, T5UID3
+        private void Upload_Bmp(int imagePos, int length, bool verify = false)
+        {
+            var sramAddress = (Buffer.Address >> 1).ToLittleEndien(2);
+            var dataLength = (length >> 1).ToLittleEndien(2);
+            var imagePosition = (imagePos >> 1).ToLittleEndien(3);
+            VP.Write(0xA2, new byte[] {
+                0x5A, //fixed
+                sramAddress[0], sramAddress[1], //SRAM position
+                dataLength[0], dataLength[1], //data length in words
+                imagePosition[0], imagePosition[1], imagePosition[2] //image buffer position
+            });
+            VP.Wait(0xA2);
+        }
+
+        //supported only on T5 devices
+        private void Upload_Jpg(Stream stream, bool modeSave, ushort modeParam, bool verify = false)
+        {
+            RAM.Write(Buffer.Address, stream, verify);
+            var sramAddress = (Buffer.Address >> 1).ToLittleEndien(2);
+            var picIdOrPos = ((int)modeParam).ToLittleEndien(2);
+            VP.Write(0xA6, new byte[] {
+                0x5A, //fixed
+                (byte)(modeSave ? 0x02 : 0x01), //display
+                sramAddress[0], sramAddress[1], //sram position
+                picIdOrPos[0], picIdOrPos[1], //screen position or pictureId
+                0, 0 //undocumented, set 0
+            });
+            VP.Wait(0xA6);
+        }
+
     }
 }

@@ -3,17 +3,25 @@
 namespace DgusDude
 {
     using Core;
+
     public enum TouchAction : byte { Release = 0, Press = 1, Lift = 2, Pressing = 3 }
-    public class TouchStatus : Core.PackedData
+    public class TouchStatus
     {
-        public TouchStatus(Device device, int address, int readlen, bool refresh = true) : base(device.VP, address, new byte[readlen], refresh, false) { }
-        public TouchAction Status => (TouchAction)Data[1];
-        public uint X => (uint)Data.FromLittleEndien(2, 2);
-        public uint Y => (uint)Data.FromLittleEndien(4, 2);
-        public override string ToString() {
-            return string.Format("X:{0} Y:{1} {2}", X, Y, Status);
+        public readonly TouchAction Status;
+        public readonly uint X;
+        public readonly uint Y;
+        public override string ToString() => string.Format("X:{0} Y:{1} {2}", X, Y, Status);
+        
+        public TouchStatus(TouchAction status, uint x, uint y)
+        {
+            Status = status; X = x; Y = y;
         }
-        protected override void Update(int offset, int length) { throw new Exception("update of touch is not supported, use simulate instead"); }
-        public virtual void Simulate(TouchAction action, uint x, uint y) { throw new NotImplementedException(); }
+
+        public TouchStatus(byte[] data)
+        {
+            Status = (TouchAction)data[1];
+            X = (uint)data.FromLittleEndien(2, 2);
+            Y = (uint)data.FromLittleEndien(4, 2);
+        }
     }
 }

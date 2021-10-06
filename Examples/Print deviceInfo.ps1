@@ -6,11 +6,13 @@ try {
     Write-Output $device
     if (-Not $device.Connected) { return }
     Write-Output $device.GetDeviceInfo()
-    if ($device -is [DgusDude.T5.T5Device]) {
+    if ($device -is [DgusDude.T5.T5Core]) {
         Write-Output ("DeviceConfig : " + $device.GetDeviceConfig().ToString())
         Write-Output ("Brightness   : " + $device.GetBrightness().ToString())
     }
-    Write-Output ("Touch        : " + $device.GetTouch().ToString())
+    if ($device.Touch) {
+        Write-Output ("Touch        : " + $device.Touch.Current.ToString())
+    }
 }finally{
     $device.Close()
 }

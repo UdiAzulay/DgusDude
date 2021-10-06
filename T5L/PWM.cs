@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 
-namespace DgusDude.T5
+namespace DgusDude.T5L
 {
     using Core;
-    public class PWM : Core.PWM
+    public class PWM : T5.PWM
     {
         public PWM(Device device, int length) 
             : base(device, length) { }
@@ -17,17 +17,7 @@ namespace DgusDude.T5
                 0x5A, // fixed
                 div, //division factor
                 accuracyBytes[0], accuracyBytes[1], //accuracy
-                0x00, 0x00, 0x00, 0x00 //fixed
             });
-        }
-
-        public override ushort[] Read(int startIndex, int length)
-        {
-            ValidateIndex(startIndex);
-            ValidateIndex(startIndex + length);
-            var ret = Device.VP.Read(0x92 + startIndex, 2 * length);
-            return Enumerable.Range(0, length)
-                .Select(v => (ushort)ret.FromLittleEndien(v * 2, 2)).ToArray();
         }
     }
 }

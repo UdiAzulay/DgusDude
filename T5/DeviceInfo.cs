@@ -6,7 +6,7 @@ namespace DgusDude.T5
     using Core;
     public class DeviceInfo
     {
-        public readonly Device Device;
+        protected readonly Device Device;
         public DeviceInfo(Device device) { Device = device; }
 
         public ulong DeviceID =>

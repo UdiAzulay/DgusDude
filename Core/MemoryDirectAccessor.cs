@@ -11,7 +11,7 @@ namespace DgusDude.Core
             uint length, byte alignment,
             AddressMode addressMode, byte readCommand, byte writeCommand,
             uint pageSize = 0, uint blockSize = Device.MAX_PACKET_SIZE
-            )  : base(device, length, alignment, blockSize, pageSize) 
+            )  : base(device, length, alignment, pageSize, blockSize) 
         {
             AddressMode = addressMode;
             ReadCommand = readCommand; WriteCommand= writeCommand;

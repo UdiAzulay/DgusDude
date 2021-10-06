@@ -5,7 +5,7 @@ namespace DgusDude.Core
     public abstract class MemoryBufferedAccessor : MemoryAccessor
     {
         protected virtual MemoryBuffer Buffer => Device.Buffer;
-        protected MemoryBufferedAccessor(Device device, uint length, byte alignment, uint packetLength, uint pageSize = 0) : base(device, length, alignment, packetLength, pageSize) { }
+        protected MemoryBufferedAccessor(Device device, uint length, byte alignment, uint pageSize, uint blockSize) : base(device, length, alignment, pageSize, blockSize) { }
 
         protected virtual void ReadBlock(int address, int bufferAddress, uint length)
         {
@@ -13,7 +13,7 @@ namespace DgusDude.Core
         }
         protected virtual void ReadPage(int address, int bufferAddress, uint length)
         {
-            using (var blocks = new Slicer((uint)length, PageSize).GetEnumerator())
+            using (var blocks = new Slicer((uint)length, BlockSize).GetEnumerator())
             {
                 while (blocks.MoveNext()) {
                     var readLength = (int)blocks.CurrentLength;
@@ -45,7 +45,7 @@ namespace DgusDude.Core
         }
         protected virtual void WritePage(int address, int bufferAddress, uint length)
         {
-            using (var blocks = new Slicer((uint)length, PageSize).GetEnumerator())
+            using (var blocks = new Slicer((uint)length, BlockSize).GetEnumerator())
             {
                 while (blocks.MoveNext()) {
                     var writeLength = (int)blocks.CurrentLength;
@@ -71,13 +71,13 @@ namespace DgusDude.Core
             }
         }
 
-        protected override void ReadBlock(int address, ArraySegment<byte> data)
+        protected override void ReadPage(int address, ArraySegment<byte> data)
         {
             Read(address, Buffer.Address, (uint) data.Count);
             Buffer.Read(data);
         }
 
-        protected override void WriteBlock(int address, ArraySegment<byte> data, bool verify = false)
+        protected override void WritePage(int address, ArraySegment<byte> data, bool verify = false)
         {
             Buffer.Write(data, verify);
             Write(address, Buffer.Address, (uint) data.Count);
@@ -96,7 +96,7 @@ namespace DgusDude.Core
         public override void MemSet(int address, uint length, ArraySegment<byte> data, bool verify = false)
         {
             var offset = 0;
-            data = CreatePatternBuffer(data, BlockSize);
+            data = CreatePatternBuffer(data, PageSize);
             Buffer.Write(data, verify);
             while (offset < length)
             {

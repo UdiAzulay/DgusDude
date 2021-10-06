@@ -6,16 +6,19 @@ namespace DgusDude.Core
     {
         public readonly string Value;
         private ModelNumber(string value) { Value = value; }
-        public string Header { get { return Value.Substring(0, 2); } }
-        public char PixelRes { get { return Value[2]; } }
-        public string LCDSize { get { return Value.Substring(3, 5); } }
-        public char Certificate { get { return Value[8]; } }
-        public string LCDInch { get { return Value.Substring(9, 3); } }
-        public char FixedUnderscore { get { return Value[12]; } }
+        public string Header => Value.Substring(0, 2);
+        public char PixelRes => Value[2];
+        public string LCDSize => Value.Substring(3, 5);
+        public char Certificate => Value[8];
+        public string LCDInch => Value.Substring(9, 3);
+        public char FixedUnderscore => Value[12];
+        public string HardwareSerial => Value.Substring(13, 2);
+        public char FixedWChar => Value[15];
+        public char Touch => Value.Length <= 16 ? (char)0 : Value[16];
 
-        public string HardwareSerial { get { return Value.Substring(13, 2); } }
-        public char FixedWChar { get { return Value[15]; } }
-        public char Touch { get { return Value.Length <= 16 ? (char)0 : Value[16]; } }
+        public bool HasTouch => Touch != 'N' && Touch != (char)0;
+        public Platform Platform => Platform.T5 | (HasTouch ? Platform.TouchScreen : 0);
+        private bool IsValid => (Value.Length >= 16 && Header == "DM" && FixedUnderscore == '_' && FixedWChar == 'W');
 
         private readonly static System.Collections.Generic.Dictionary<string, Tuple<uint, uint>> LCDSizeMap =
             new System.Collections.Generic.Dictionary<string, Tuple<uint, uint>>
@@ -34,7 +37,7 @@ namespace DgusDude.Core
                 { "19108", new Tuple<uint, uint>(1920, 1080) },
             };
 
-        public Core.Screen CreateLCD()
+        public Screen CreateLCD()
         {
             Tuple<uint, uint> lcdSize;
             if (!LCDSizeMap.TryGetValue(LCDSize, out lcdSize))
@@ -49,15 +52,11 @@ namespace DgusDude.Core
             return new Screen(lcdSize.Item1, lcdSize.Item2, pixelformat, inchSize);
         }
 
-        public bool HasTouch => Touch != 'N' && Touch != (char)0;
-        public Platform Platform => Platform.T5 | (HasTouch? Platform.TouchScreen : 0);
-        private bool IsValid => (Header == "DM" && FixedUnderscore == '_' && FixedWChar == 'W');
         public static ModelNumber Parse(string value) 
         {
             var ret = new ModelNumber(value); 
             if (!ret.IsValid) throw new Exception("device model format is DMxnnnnnxnnn_xnWx");
             return ret;
         }
-
     }
 }

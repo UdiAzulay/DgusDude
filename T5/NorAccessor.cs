@@ -5,7 +5,7 @@ namespace DgusDude.T5
     using Core;
     public class NorAccessor : Core.MemoryBufferedAccessor
     {
-        public NorAccessor(T5Device device, uint length) : base(device, length, 4, 0x1000 /*4k*/) { }
+        public NorAccessor(Device device, uint length) : base(device, length, 4, 0x1000 /*2kw*/, 0) { }
         private void SendIO(bool write, int address, int bufferAddress, uint length)
         {
             var lengthWords = ((int)(length >> 1).EnsureEvenLength()).ToLittleEndien(2);

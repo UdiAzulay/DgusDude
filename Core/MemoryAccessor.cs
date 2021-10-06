@@ -3,7 +3,6 @@ namespace DgusDude.Core
 {
     public interface IDeviceAccessor
     {
-        //readonly Core.Device Device;
         void Read(int address, ArraySegment<byte> data);
         void Write(int address, ArraySegment<byte> data, bool verify = false);
     }
@@ -15,7 +14,7 @@ namespace DgusDude.Core
         public uint BlockSize { get; private set; }
         public uint PageSize { get; private set; }
         public byte Alignment { get; private set; }
-        protected MemoryAccessor(Device device, uint length, byte alignment = 1, uint blockSize = 0, uint pageSize = 0) 
+        protected MemoryAccessor(Device device, uint length, byte alignment = 1, uint pageSize = 0, uint blockSize = 0) 
         { 
             Device = device; 
             Length = length; 
@@ -83,9 +82,20 @@ namespace DgusDude.Core
             }
         }
 
+        public virtual void Write(int address, System.IO.Stream stream, bool verify = false)
+        {
+            ValidateWriteAddress(address, (uint)(stream.Length - stream.Position));
+            int bytesRead;
+            var buffer = new byte[PageSize];
+            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0) { 
+                Write(address, new ArraySegment<byte>(buffer, 0, bytesRead), verify);
+                address += bytesRead;
+            }
+        }
+
         public virtual void Verify(int address, ArraySegment<byte> data)
         {
-            byte[] readBuffer = new byte[data.Count + (data.Count % 2 == 1 ? 1 : 0)];
+            byte[] readBuffer = new byte[data.Count + (data.Count & 1)];
             Read(address, new ArraySegment<byte>(readBuffer));
             for (int i = 0; i < data.Count; i++)
                 if (readBuffer[i] != data.Array[data.Offset + i])
@@ -105,8 +115,9 @@ namespace DgusDude.Core
         public virtual void MemSet(int address, uint length, ArraySegment<byte> data, bool verify = false)
         {
             var offset = 0;
-            if (data == Extensions.EmptyArraySegment) data = CreatePatternBuffer(data, BlockSize);
-            else data = new ArraySegment<byte>(new byte[BlockSize]);
+            var blockSize = Math.Max(PageSize, BlockSize);
+            if (data == Extensions.EmptyArraySegment) data = CreatePatternBuffer(data, blockSize);
+            else data = new ArraySegment<byte>(new byte[blockSize]);
             while (offset < length)
             {
                 var dt = new ArraySegment<byte>(data.Array,

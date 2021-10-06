@@ -5,7 +5,7 @@ namespace DgusDude.K600
     using Core;
     public class DeviceInfo
     {
-        public readonly Device Device;
+        protected readonly Device Device;
         public DeviceInfo(Device device) { Device = device; }
         public byte Version => Device.VP.Read(0x00, 1)[0];
         public byte Brightness { get { return Device.VP.Read(0x01, 1)[0]; } set { Device.VP.Write(0x01, new[] { value }); } }
