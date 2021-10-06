@@ -48,10 +48,10 @@ namespace DgusDude.T5
         }
         
         public bool IsIdle => Device.VP.Read(0x15, 2).FromLittleEndien(0, 2) == 0;
-        public decimal Vcc => Device.VP.Read(0x30, 2).FromLittleEndien(0, 2) / 10000m;
+        public decimal Vcc => (decimal)(Device.VP.Read(0x30, 2).FromLittleEndien(0, 2) * (4800 / 65532.0)) / 1000m;
         public decimal CpuTemprature =>
             (Device.Platform & Platform.PlatformMask) != Platform.UID1 ? 0 :
-                Device.VP.Read(0x37, 2).FromLittleEndien(0, 2) / 10m;
+                (Device.VP.Read(0x37, 2).FromLittleEndien(0, 2) * (240 / 929m)) * 10;
         //led Now
         public string SDUploadDir => Encoding.ASCII.GetString(Device.VP.Read(0x7C, 8));
     }

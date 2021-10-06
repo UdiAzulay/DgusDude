@@ -54,17 +54,17 @@ DgusDude by Udi Azulay 2021
 COM-Port (COM6, COM7, COM10, COM14): com14
 
 Platform     : T5, UID1, TouchScreen
-Screen       : 4.3 Inch, 272x480 0bpp
+Screen       : 4.3 Inch, 272x480 2bpp
 Registers    : 2kb      (Align:1, Block:248, Page:256)
 RAM          : 128kb    (Align:2, Block:248, Page:0)
-Storage      : 65536kb  (Align:4, Block:262144, Page:32768)
-UserSettings : 320kb    (Align:4, Block:4096, Page:0)
+Storage      : 65536kb  (Align:4, Block:32768, Page:524288)
+UserSettings : 320kb    (Align:4, Block:0, Page:4096)
 Buffer       : 64kb, 0x10000:20000
 VP           : VP On SRAM
-Pictures     : Max 240 items
+Pictures     : Max 64 items
 Music        : Max 256 items
-ADC          : 7 Items
 PWM          : 3 Items
+ADC          : 4 Items
 Config       : Header: 5A-A5, Retries: 10, Options: NoAckRAM
 Connection   : System.IO.Ports.SerialPort
 Connected    : True
@@ -73,11 +73,11 @@ DeviceID      : 8671135961630377990
 Version       : (20, 32)
 Time          : 01/01/0001 0:00:00
 IsIdle        : True
-Vcc           : 4.472
+Vcc           : 3.28027833730086  
 CpuTemprature : 0
 SDUploadDir   :
 
 DeviceConfig : TouchTone, SDEnabled, InitWith22Config, CheckCRC, Touch Mode: 7 Sensitivity: 20
-Brightness   : Normal: 100, StandBy: 100 after: 2000
-Touch        : X:0 Y:0 Release
+Brightness   : Normal: 100, StandBy: 100 after: 2000ms
+Touch        : X:250 Y:150 Lift
 </pre>

@@ -4,7 +4,7 @@ using System.IO;
 namespace DgusDude.T5
 {
     using Core;
-    class T5Device : T5Core
+    public class T5Device : T5Core
     {
         public T5Device(Platform platform, Screen screen, uint? flashSize = null)
             : base(platform, screen)
