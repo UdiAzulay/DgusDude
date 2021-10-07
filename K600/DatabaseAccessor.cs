@@ -3,9 +3,9 @@
 namespace DgusDude.K600
 {
     using Core;
-    public class NandAccessor : MemoryBufferedAccessor
+    public class DatabaseAccessor : MemoryBufferedAccessor
     {
-        public NandAccessor(Device device, uint length, byte alignment, uint pageSize) : base(device, length, alignment, pageSize, 0) { }
+        public DatabaseAccessor(Device device, uint length, byte alignment, uint pageSize) : base(device, length, alignment, pageSize, 0) { }
         private void SendIO(bool write, int address, int bufferAddress, uint length)
         {
             var lengthWords = ((int)(length >> 1).EnsureEvenLength()).ToLittleEndien(2);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace DgusDude.T5L
 {
@@ -10,7 +11,7 @@ namespace DgusDude.T5L
         {
             if (!flashSize.HasValue) flashSize = 0x01000000;//16Mb, 0x04000000; //64MB
             if (!musicOffset.HasValue) musicOffset = flashSize.Value >> 1;
-            Storage = new NandAccessor(this, flashSize.Value, 0x40000 /*256kb*/, 0x8000 /*32kb*/); //64MB
+            Storage = new NandAccessor(this, flashSize.Value, 0x8000 /*32kb*/, 0); //64MB
             Pictures = new PictureStorage(this, musicOffset.Value / Storage.PageSize);
             Music = new MusicStorage(this, (flashSize.Value  - musicOffset.Value) / 0x020000/*128Kb*/, musicOffset.Value);
             if ((Platform & Platform.TouchScreen) != 0) Touch = new Touch(this);
@@ -20,17 +21,19 @@ namespace DgusDude.T5L
 
         public DeviceInfo GetDeviceInfo() => new DeviceInfo(this);
 
-        public override bool Upload(System.IO.Stream stream, string fileExt, int? index, bool verify = false)
+        public override string UploadExtensions => base.UploadExtensions + ";JPG;ICL;";
+        public override void Upload(System.IO.Stream stream, string fileExt, int? index, bool verify = false)
         {
             switch (fileExt)
             {
                 case "JPG":
                 case "ICL":
-                    Upload(Storage, 0x40000/*256kb*/, stream, index.Value, verify); 
-                    return true;
-                case "BMP": return false;
+                    Upload(Storage, 0x40000/*256kb*/, stream, index.Value, verify);
+                    break;
+                default: 
+                    base.Upload(stream, fileExt, index, verify);
+                    break;
             }
-            return base.Upload(stream, fileExt, index, verify);
         }
     }
 }

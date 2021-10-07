@@ -71,39 +71,45 @@ namespace DgusDude.Core
             }
         }
 
-        protected override void ReadPage(int address, ArraySegment<byte> data)
+        public override void Read(int address, ArraySegment<byte> data)
         {
-            Read(address, Buffer.Address, (uint) data.Count);
-            Buffer.Read(data);
+            foreach (var part in new Slicer(data, Buffer.Length)) { 
+                Read(address, Buffer.Address, (uint)part.Count);
+                Buffer.Read(part);
+                address += part.Count;
+            }
         }
 
-        protected override void WritePage(int address, ArraySegment<byte> data, bool verify = false)
+        public override void Write(int address, ArraySegment<byte> data, bool verify = false)
         {
-            Buffer.Write(data, verify);
-            Write(address, Buffer.Address, (uint) data.Count);
-            if (verify) Verify(address, data);
+            foreach (var part in new Slicer(data, Buffer.Length))
+            {
+                Buffer.Write(part, verify);
+                Write(address, Buffer.Address, (uint)part.Count);
+                address += part.Count;
+            }
         }
 
         public override void Verify(int address, ArraySegment<byte> data)
         {
-            foreach (var v in new Slicer(data, BlockSize))
+            foreach (var part in new Slicer(data, Buffer.Length))
             {
-                Read(address + v.Offset, Buffer.Address + Alignment, (uint) v.Count);
-                Buffer.Memory.Verify(Buffer.Address + Alignment, v);
+                Read(address, Buffer.Address + Alignment, (uint)part.Count);
+                Buffer.Memory.Verify(Buffer.Address + Alignment, part);
+                address += part.Count;
             }
         }
 
         public override void MemSet(int address, uint length, ArraySegment<byte> data, bool verify = false)
         {
             var offset = 0;
-            data = CreatePatternBuffer(data, PageSize);
+            data = CreatePatternBuffer(data, Math.Min(OptimalIOLength, length));
             Buffer.Write(data, verify);
             while (offset < length)
             {
-                Write(address + offset, Buffer.Address, (uint) data.Count);
+                Write(address + offset, Buffer.Address, (uint)Math.Min(data.Count, length - offset));
                 offset += data.Count;
             }
         }
-
     }
 }

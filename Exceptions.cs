@@ -18,7 +18,7 @@ namespace DgusDude
             => Create("{0} Address 0x{1:X4} is out of range, range is 0-0x{2:X8}", mem.ToString(), address, mem.Length);
         
         public static Exception CreateMemBaundary(Core.MemoryAccessor mem, int boundary)
-            => Create("{0} Memory access must be 0x{1:X} baundary", mem.ToString(), boundary);
+            => Create("{0} Memory access must be 0x{1:X} baundary", mem.GetType().ToString(), boundary);
         
         public static Exception CreateFileIndex(string fileName)
             => Create("Upload invalid file index {0}", fileName);

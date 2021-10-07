@@ -12,8 +12,6 @@ namespace DgusDude.T5L
         public override void ValidateReadAddress(int address, uint length)
             => throw new NotSupportedException();
 
-        protected override void WriteBlock(int address, int bufferAddress, uint length) {  }
-
         protected override void WritePage(int address, int bufferAddress, uint length)
         {
             var nandAddrBytes = ((int)(address / PageSize)).ToLittleEndien(2);

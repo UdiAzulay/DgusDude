@@ -14,6 +14,7 @@ namespace DgusDude.Core
         public uint BlockSize { get; private set; }
         public uint PageSize { get; private set; }
         public byte Alignment { get; private set; }
+        protected uint OptimalIOLength => (BlockSize != 0 ? BlockSize : Device.Buffer.Length);
         protected MemoryAccessor(Device device, uint length, byte alignment = 1, uint pageSize = 0, uint blockSize = 0) 
         { 
             Device = device; 
@@ -23,26 +24,21 @@ namespace DgusDude.Core
             PageSize = pageSize;
         }
 
-        public override string ToString() { 
-            return string.Format("{0}kb\t(Align:{1}, Block:{2}, Page:{3})", Length / 1024, Alignment, BlockSize, PageSize); 
-        }
-        protected virtual void ValidateAddress(int address, uint length)
+        public override string ToString()  
+           => string.Format("{0:#,#\\k\\b}\t(Align:{1}, Page:{2}, Block:{3})", Length >> 10, Alignment, PageSize, BlockSize); 
+
+        protected virtual void ValidateAddress(bool isWrite, int address, uint length)
         {
             if (address >= Length) throw Exception.CreateOutOfRange(this, address);
             if (address + (uint)length > Length) throw Exception.CreateOutOfRange(this, (int)(address + length - 1));
-            ValidateAddressAlignment(address);
-            ValidateLengthAlignment(length);
+            ValidateAlignment(isWrite, address, length);
         }
-        protected virtual void ValidateAddressAlignment(int value)
+        protected virtual void ValidateAlignment(bool isWrite, int address, uint length)
         {
-            if (value % Alignment != 0) throw Exception.CreateMemBaundary(this, Alignment);
-        }
-        protected virtual void ValidateLengthAlignment(uint value)
-        {
-            if (value % Alignment != 0) throw Exception.CreateMemBaundary(this, Alignment);
+            if (address % Alignment != 0 || length % Alignment != 0) throw Exception.CreateMemBaundary(this, Alignment);
         }
 
-        public virtual void ValidateReadAddress(int address, uint length) { ValidateAddress(address, length); }
+        public virtual void ValidateReadAddress(int address, uint length) { ValidateAddress(false, address, length); }
         protected virtual void ReadBlock(int address, ArraySegment<byte> data) { throw new NotImplementedException(); }
         protected virtual void ReadPage(int address, ArraySegment<byte> data) 
         {
@@ -62,7 +58,7 @@ namespace DgusDude.Core
             }
         }
 
-        public virtual void ValidateWriteAddress(int address, uint length) { ValidateAddress(address, length); }
+        public virtual void ValidateWriteAddress(int address, uint length) { ValidateAddress(true, address, length); }
         protected virtual void WriteBlock(int address, ArraySegment<byte> data, bool verify = false) { throw new NotImplementedException(); }
         protected virtual void WritePage(int address, ArraySegment<byte> data, bool verify = false) 
         {
@@ -86,7 +82,7 @@ namespace DgusDude.Core
         {
             ValidateWriteAddress(address, (uint)(stream.Length - stream.Position));
             int bytesRead;
-            var buffer = new byte[PageSize];
+            var buffer = new byte[OptimalIOLength];
             while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0) { 
                 Write(address, new ArraySegment<byte>(buffer, 0, bytesRead), verify);
                 address += bytesRead;
@@ -95,7 +91,7 @@ namespace DgusDude.Core
 
         public virtual void Verify(int address, ArraySegment<byte> data)
         {
-            byte[] readBuffer = new byte[data.Count + (data.Count & 1)];
+            byte[] readBuffer = new byte[data.Count + (data.Count % Alignment)];
             Read(address, new ArraySegment<byte>(readBuffer));
             for (int i = 0; i < data.Count; i++)
                 if (readBuffer[i] != data.Array[data.Offset + i])
@@ -115,8 +111,8 @@ namespace DgusDude.Core
         public virtual void MemSet(int address, uint length, ArraySegment<byte> data, bool verify = false)
         {
             var offset = 0;
-            var blockSize = Math.Max(PageSize, BlockSize);
-            if (data == Extensions.EmptyArraySegment) data = CreatePatternBuffer(data, blockSize);
+            var blockSize = OptimalIOLength;
+            if (data != Extensions.EmptyArraySegment) data = CreatePatternBuffer(data, blockSize);
             else data = new ArraySegment<byte>(new byte[blockSize]);
             while (offset < length)
             {

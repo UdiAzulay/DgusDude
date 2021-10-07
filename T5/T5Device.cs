@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace DgusDude.T5
 {
@@ -12,7 +13,7 @@ namespace DgusDude.T5
             if (!flashSize.HasValue) flashSize = 0x04000000; //64MB
             var musicOffset = flashSize.Value >> 1;
             Storage = (platform & Platform.PlatformMask) == Platform.UID2 ?
-                new NandAccessor(this, flashSize.Value, 0x040000 /*128kw*/, 0x8000 /*not needed*/) :
+                new NandAccessor(this, flashSize.Value, 0x040000 /*128kw*/, 0) :
                 new NandAccessor(this, flashSize.Value, 0x080000 /*256kw*/, 0x8000 /*32kb*/);
             Pictures = new PictureStorage(this, musicOffset / Storage.PageSize);
             Music = new MusicStorage(this, (flashSize.Value - musicOffset) / 0x020000/*128Kb*/, musicOffset);
@@ -41,22 +42,25 @@ namespace DgusDude.T5
         }
 
         public DeviceInfo GetDeviceInfo() => new DeviceInfo(this);
-        public override bool Upload(Stream stream, string fileExt, int? index, bool verify = false)
+        public override string UploadExtensions => base.UploadExtensions + "JPG;BMP;WAV;";
+        public override void Upload(Stream stream, string fileExt, int? index, bool verify = false)
         {
             switch (fileExt) { 
                 case "JPG": 
                     Upload_Jpg(stream, true, (ushort)index.Value, verify);
-                    return true;
+                    break;
                 case "BMP":
                     using (var bmp = new System.Drawing.Bitmap(stream))
                         Upload_Bmp(bmp.GetBytes(Screen.PixelFormat), true, verify);
                     Pictures.TakeScreenshot(index.Value);
-                    return true;
+                    break;
                 case "WAV": 
                     Music.Upload(index.Value, stream, verify);
                     break;
+                default:
+                    base.Upload(stream, fileExt, index, verify);
+                    break;
             }
-            return base.Upload(stream, fileExt, index, verify);
         }
 
         //upload 16 bit per pixel data, 

@@ -16,7 +16,8 @@ namespace DgusDude.Core
             AddressMode = addressMode;
             ReadCommand = readCommand; WriteCommand= writeCommand;
         }
-        protected override void ValidateLengthAlignment(uint value) { return; }
+        protected override void ValidateAlignment(bool isWrite, int address, uint length)
+            => base.ValidateAlignment(isWrite, address, 0);
         protected virtual PacketHeader GetReadHeader(int address, ArraySegment<byte> data, ArraySegment<byte> padding, out PacketHeader replyHeader)
         {
             replyHeader = new PacketHeader(AddressMode, Device.Config.Header.Length, 1);

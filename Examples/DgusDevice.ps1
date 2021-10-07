@@ -22,7 +22,7 @@ function New-DgusDevice
 	[void](LoadDgusAsm)
 	$savePort = $false
 	$platform = [DgusDude.Platform]::T5 -bor [DgusDude.Platform]::UID1 -bor [DgusDude.Platform]::TouchScreen
-	$screen = New-Object -TypeName DgusDude.Core.Screen -ArgumentList 272, 480, 0, 4.3
+	$screen = New-Object -TypeName DgusDude.Core.Screen -ArgumentList 272, 480, Format16bppRgb565, 4.3
 	$device = [DgusDude.Device]::Create($platform, $screen)
 	if (-Not $comPort) { $comPort = $global:DgusDevicePort }
 	if (-Not $comPort) {
@@ -42,9 +42,12 @@ function Update-DgusDevice
 	)
 	BEGIN { Write-Output "Uploading $($dwinset_dir)" }
 	PROCESS {
+		$supportedExt = $device.UploadExtensions.Split(';')
 		foreach($file in Get-ChildItem($dwinset_dir)) {
+			if (-Not $supportedExt.Contains([System.IO.Path]::GetExtension($file).TrimStart('.').ToUpper())) 
+				{ Continue; }
 			Write-Output $file
-			if(-Not $device.Upload($file, $false)) { Write-Output "Skipped" }
+			$device.Upload($file, $false);
 		}
 		$device.Reset()
 	} 

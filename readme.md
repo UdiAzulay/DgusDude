@@ -17,7 +17,7 @@ and an Example DWIN project that shows local PC CPU and MEM usage on connected D
 known issues:
 WAV uploader not working, only integer VP values can be updated (issue with double and TEXT mapping)
 
-**tested only on T5UID device (the only device I own), 
+**tested only on T5UID1 device (the only device I own), 
 other devices implemented based on <a target="_blank" href="http://www.dwin.com.cn/service/en/file/id/13">DWIN documentation</a> but never tested.
 in any case, USE ON YOUR OWN RISK!!!
 

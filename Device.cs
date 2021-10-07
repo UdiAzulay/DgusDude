@@ -110,6 +110,7 @@ namespace DgusDude
             if (UserSettings != null) Storage.MemSet(0, UserSettings.Length, Extensions.EmptyArraySegment, false);
         }
 
+        public virtual string UploadExtensions => string.Empty;
         protected virtual void Upload(MemoryAccessor mem, uint pageSize, System.IO.Stream stream, int index, bool verify = false)
         {
             var maxIndex = mem.Length / pageSize;
@@ -117,7 +118,7 @@ namespace DgusDude
             var address = (int)(index * pageSize); //256kb blocks
             mem.Write(address, stream, verify);
         }
-        public virtual bool Upload(string fileName, bool verify = false)
+        public virtual void Upload(string fileName, bool verify = false)
         {
             var fileNameOnly = System.IO.Path.GetFileName(fileName);
             int fileIndex = int.MaxValue;
@@ -127,11 +128,18 @@ namespace DgusDude
                 if (i > 0) fileIndex = int.Parse(fileNameOnly.Substring(0, i));
                 break;
             }
-            var ext = System.IO.Path.GetExtension(fileName)?.TrimStart('.');
-            using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                return Upload(f, ext, fileIndex, verify);
+            var ext = System.IO.Path.GetExtension(fileName)?.TrimStart('.')?.ToUpper();
+            using (var f = new System.IO.FileStream(fileName, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read)) 
+            {
+                try {
+                    Upload(f, ext, fileIndex, verify);
+                } finally {
+                    f.Close();
+                }
+            }
         }
-        public virtual bool Upload(System.IO.Stream stream, string fileExt, int? index, bool verify = false) => false;
+        public virtual void Upload(System.IO.Stream stream, string fileExt, int? index, bool verify = false) 
+            => throw new Exception(string.Format("Unsupported file type '{0}'", fileExt));
 
         //good reset sequence for T5 is: 5A, A5, 07, 82, 00, 04, 55, AA, 5A, 5A
         public void RawWrite(int retry, params ArraySegment<byte>[] buffers)

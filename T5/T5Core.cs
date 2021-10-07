@@ -38,30 +38,28 @@ namespace DgusDude.T5
             VP.Wait(0x06);
         }
 
-        public override bool Upload(Stream stream, string fileExt, int? index, bool verify = false)
+        public override string UploadExtensions => base.UploadExtensions + "HZK;DZK;BIN;ICO;LIB;DWINOS;";
+
+        public override void Upload(Stream stream, string fileExt, int? index, bool verify = false)
         {
             if (new[] { "HZK", "DZK", "BIN", "ICO" }.Contains(fileExt)) {
                 Upload(Storage, 0x40000 /*256kb*/, stream, index.Value, verify);
-                return true;
             } else if (fileExt.Equals("LIB")) {
                 Upload(UserSettings, 0x1000, stream, index.Value, verify);
-                return true;
             } else if (fileExt.Equals("DWINOS")) { 
                 Upload_OS(stream, 0x10);
-                return true;
-            }
-            return false;
+            } else base.Upload(stream, fileExt, index, verify);
         }
 
-        public override bool Upload(string fileName, bool verify = false)
+        public override void Upload(string fileName, bool verify = false)
         {
             if (fileName.StartsWith("T5", StringComparison.InvariantCultureIgnoreCase))
-                return false; //skip - unable to upload it
+                return; //skip - unable to upload it
             if (fileName.StartsWith("DWINOS", StringComparison.InvariantCultureIgnoreCase)) {
                 using (var f = new FileStream(fileName, FileMode.Open, FileAccess.Read))
-                    return Upload(f, "DWINOS", null, verify);
+                    Upload(f, "DWINOS", null, verify);
             }
-            return base.Upload(fileName, verify);
+            base.Upload(fileName, verify);
         }
 
         public SystemConfig GetDeviceConfig(bool refresh = true) => new SystemConfig(this, refresh);
