@@ -1,4 +1,4 @@
-﻿a .Net libaray and download tool to control DWIN DGUS devices over serial port
+﻿a .Net library and download tool to control DWIN DGUS devices over serial port
 
 Supported devices: T5, T5L, K600, Mini DUGS (partial support)
 
